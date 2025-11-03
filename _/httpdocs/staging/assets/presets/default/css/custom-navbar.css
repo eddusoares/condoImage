@@ -1,0 +1,34 @@
+.navbar-flyout {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.navbar-flyout.is-open {
+    display: block;
+}
+
+.navbar-flyout__card {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.navbar-flyout__columns {
+    display: flex;
+    gap: 2rem;
+}
+
+.nav-link-button {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    color: inherit;
+    font-size: inherit;
+}

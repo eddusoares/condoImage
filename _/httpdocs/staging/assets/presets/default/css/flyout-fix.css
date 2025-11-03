@@ -1,0 +1,34 @@
+.navbar-flyout {
+    position: fixed !important;
+    top: var(--header-height, 80px) !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+    z-index: 9999 !important;
+    display: none !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.navbar-flyout.is-open {
+    display: block !important;
+}
+
+/* Garantir que o container do flyout tenha posição relativa */
+.header {
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
+/* Estilos específicos para o painel de busca */
+#navbarSearchPanel.is-open {
+    display: block !important;
+}
+
+/* Ajustes para o layout interno dos painéis */
+.navbar-flyout__card {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #fff;
+}

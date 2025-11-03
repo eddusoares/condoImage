@@ -1,0 +1,177 @@
+{
+    "banner":  {
+                   "builder":  true,
+                   "no_selection":  false,
+                   "name":  "Banner Section",
+                   "content":  {
+                                   "images":  {
+                                                  "theme_one_banner":  {
+                                                                           "size":  "446x455"
+                                                                       },
+                                                  "theme_one_shape":  {
+                                                                          "size":  "371x169"
+                                                                      },
+                                                  "theme_two_banner":  {
+                                                                           "size":  "1920x689"
+                                                                       }
+                                              },
+                                   "heading":  "text",
+                                   "subheading":  "text",
+                                   "button_one":  "text",
+                                   "button_two":  "text",
+                                   "button_one_link":  "text",
+                                   "button_two_link":  "text"
+                               }
+               },
+    "category":  {
+                     "builder":  true,
+                     "no_selection":  false,
+                     "name":  "Category Section",
+                     "content":  {
+                                     "heading":  "text",
+                                     "subheading":  "text",
+                                     "show_meta":  "switch",
+                                     "button_text":  "text",
+                                     "button_link":  "text"
+                                 }
+                 },
+    "top_categories":  {
+                           "builder":  true,
+                           "no_selection":  false,
+                           "name":  "Top Categories",
+                           "content":  {
+                                           "heading":  "text",
+                                           "subheading_primary":  "text",
+                                           "subheading_secondary":  "text",
+                                           "button_text":  "text",
+                                           "button_link":  "text"
+                                       }
+                       },
+    "work_process":  {
+                         "builder":  true,
+                         "no_selection":  false,
+                         "name":  "Work Process",
+                         "content":  {
+                                         "heading":  "text",
+                                         "subheading":  "text"
+                                     },
+                         "element":  {
+                                         "images":  {
+                                                        "image":  {
+                                                                      "size":  "149x149"
+                                                                  }
+                                                    },
+                                         "title":  "text",
+                                         "description":  "textarea-rich",
+                                         "modal":  true
+                                     }
+                     },
+    "creative_resource":  {
+                              "builder":  true,
+                              "no_selection":  false,
+                              "name":  "Creative Resource",
+                              "content":  {
+                                              "images":  {
+                                        "image":  {
+                                                                           "size":  "750x630"
+                                                                       }
+                                                         },
+                                              "heading":  "text",
+                                              "subheading":  "text"
+                                          },
+                              "element":  {
+                                              "icon":  "icon",
+                                              "title":  "text",
+                                              "description":  "textarea-rich",
+                                              "modal":  true
+                                          }
+                          },
+    "visual_compilation":  {
+                               "builder":  true,
+                               "no_selection":  false,
+                               "name":  "Visual Compilation",
+                               "content":  {
+                                               "heading":  "text",
+                                               "subheading":  "text"
+                                           }
+                           },
+    "photo_collection":  {
+                             "builder":  true,
+                             "no_selection":  false,
+                             "name":  "Photo Collection",
+                             "content":  {
+                                             "heading":  "text",
+                                             "subheading":  "text"
+                                         }
+                         },
+    "faq":  {
+                "builder":  true,
+                "name":  "FAQ Section",
+                "content":  {
+                                "heading":  "text",
+                                "subheading":  "text",
+                                "button_name":  "text",
+                                "button_link":  "text"
+                            },
+                "element":  {
+                                "question":  "text",
+                                "answer":  "textarea-rich",
+                                "modal":  false
+                            }
+            },
+    "contact_us":  {
+                       "builder":  true,
+                       "no_selection":  true,
+                       "name":  "Contact Us",
+                       "content":  {
+                                       "title":  "text",
+                                       "latitude":  "text",
+                                       "longitude":  "text",
+                                       "footer_short_description":  "text",
+                                       "website_footer":  "textarea-rich"
+                                   }
+                   },
+    "policy_pages":  {
+                         "builder":  false,
+                         "no_selection":  true,
+                         "name":  "Policy Pages",
+                         "element":  {
+                                         "title":  "text",
+                                         "details":  "textarea-rich",
+                                         "modal":  false
+                                     }
+                     },
+    "social_icon":  {
+                        "builder":  true,
+                        "no_selection":  true,
+                        "name":  "Social Icons",
+                        "element":  {
+                                        "title":  "text",
+                                        "social_icon":  "icon",
+                                        "url":  "text",
+                                        "modal":  false
+                                    }
+                    },
+    "footer_company_links":  {
+                                 "builder":  true,
+                                 "no_selection":  true,
+                                 "name":  "Footer - Company Links",
+                                 "element":  {
+                                                 "title":  "text",
+                                                 "url":  "text",
+                                                 "modal":  true
+                                             }
+                             },
+    "neighborhood_gallery":  {
+                                 "builder":  true,
+                                 "no_selection":  false,
+                                 "name":  "Neighborhood Gallery",
+                                 "content":  {
+                                                 "heading":  "text",
+                                                 "subheading":  "text",
+                                                 "show_meta":  "switch",
+                                                 "button_text":  "text",
+                                                 "button_link":  "text"
+                                             }
+                             }
+}

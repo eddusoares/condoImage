@@ -1,0 +1,2 @@
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'NovaSenha!123';
+FLUSH PRIVILEGES;

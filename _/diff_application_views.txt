@@ -1,0 +1,27 @@
+﻿Diff for application/views
+Summary: sizeDiff=23 onlyA=0 onlyB=0
+
+Different by size:
+ - includes\browse.blade.php (A=699 B=796)
+ - presets\default\building\building_details.blade.php (A=42212 B=25090)
+ - presets\default\building\condo_building.blade.php (A=5625 B=3588)
+ - presets\default\home.blade.php (A=3290 B=2583)
+ - presets\default\layouts\frontend.blade.php (A=4899 B=4977)
+ - presets\default\layouts\master.blade.php (A=6604 B=6694)
+ - presets\default\neighborhood\neighborhood.blade.php (A=6231 B=3328)
+ - presets\default\neighborhood\neighborhood_details.blade.php (A=4812 B=3217)
+ - presets\default\partials\breadcrumb.blade.php (A=625 B=616)
+ - presets\default\partials\footer.blade.php (A=8259 B=10821)
+ - presets\default\partials\header.blade.php (A=41028 B=0)
+ - presets\default\sections\banner.blade.php (A=10979 B=5128)
+ - presets\default\sections\building_visuals.blade.php (A=8192 B=)
+ - presets\default\sections\building_visuals_buy.blade.php (A=8789 B=)
+ - presets\default\sections\category.blade.php (A=3842 B=1974)
+ - presets\default\sections\creative_resource.blade.php (A=1725 B=1699)
+ - presets\default\sections\faq.blade.php (A=2728 B=2187)
+ - presets\default\sections\neighborhood_gallery.blade.php (A=3830 B=)
+ - presets\default\sections\top_categories.blade.php (A=11484 B=)
+ - presets\default\sections\visual_compilation.blade.php (A=1840 B=617)
+ - presets\default\sections\work_process.blade.php (A=1694 B=1287)
+ - presets\default\user\auth\login.blade.php (A=7437 B=4383)
+ - presets\default\user\auth\login.blade_ultimo_valido.php (A=4383 B=)

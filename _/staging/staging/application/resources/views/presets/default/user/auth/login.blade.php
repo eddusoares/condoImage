@@ -1,0 +1,69 @@
+@extends($activeTemplate . 'layouts.frontend')
+
+@section('content')
+    <section class="account bg-img py-120 bg-overlay-two"
+        data-background="{{ getImage(getFilePath('others') . '/' . 'signinbg.png') }}">
+        <div class="account-inner">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-6 col-md-10 col-12">
+                        <div class="account-form">
+                            <div class="content">
+                                <a class="navbar-brand logo" href="{{ route('home') }}"><img
+                                        src="{{ getImage('assets/images/general/logo2.png') }}" alt="logo"></a>
+                                <h3 class="title">@lang('Sign In')</h3>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('user.login') }}" class="verify-gcaptcha">
+                                @csrf
+                                <div class="row gy-3">
+                                    <div class="form-group">
+                                        <label for="email" class="form--label">@lang('Username or Email')</label>
+                                        <input type="text" name="username" value="{{ old('username') }}"
+                                            class="form-control form--control" placeholder="Email" required>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <label for="your-password" class="form--label">@lang('Password')</label>
+                                        <div class="input-group">
+                                            <input id="password" type="password" class="form--control" name="password"
+                                                placeholder="Password" required>
+                                            <div class="password-show-hide fas fa-eye toggle-password fa-eye-slash"
+                                                id="#password"></div>
+                                        </div>
+                                    </div>
+                                    <x-captcha></x-captcha>
+                                    <div class="col-sm-12">
+                                        <div class="d-flex flex-wrap justify-content-between">
+                                            <div class="form--check">
+                                                <input class="form-check-input" type="checkbox" name="remember"
+                                                    id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="remember">
+                                                    @lang('Remember Me')
+                                                </label>
+
+                                            </div>
+                                            <a class="fw-bold forgot-pass text--base"
+                                                href="{{ route('user.password.request') }}">
+                                                @lang('Forgot your password?')
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <button type="submit" id="recaptcha"
+                                            class="btn button w-100">@lang('Sign In')</button>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <div class="text-center">
+                                            <p class="text">@lang('Don\'t Have An Account')? <a href="{{ route('user.register') }}"
+                                                    class="text--base">@lang('Create Account')</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+@endsection

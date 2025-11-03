@@ -1,0 +1,15 @@
+﻿Diff for assets/presets/default
+Summary: sizeDiff=11 onlyA=0 onlyB=0
+
+Different by size:
+ - css\custom.css (A=55 B=31)
+ - css\custom-mobile.css (A=55 B=)
+ - css\custom-navbar.css (A=581 B=)
+ - css\flyout-fix.css (A=835 B=)
+ - css\main.css (A=159275 B=189312)
+ - css\main.old.css (A=268080 B=)
+ - css\main_atual.css (A=164036 B=)
+ - css\main_backup.css (A=154363 B=)
+ - css\navbar-flyout.css (A=1804 B=)
+ - js\mobile-menu.js (A=5211 B=)
+ - js\simplified_carousel_script.js (A=7051 B=)
