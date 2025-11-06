@@ -794,6 +794,36 @@ function findWatermarkImagePath($dir, $data, $image)
     }
 }
 
+if (!function_exists('findWatermarkOrMainImagePath')) {
+    function findWatermarkOrMainImagePath($data, $type)
+    {
+        $storageProvider = StorageProvider::where('status', 1)->first();
+        $data = (object) $data;
+        if ($data->storage == 's3') {
+            $filePath = '/watermark_' . $data->image;
+            $s3 = Storage::disk('s3');
+            if ($s3->exists($filePath)) {
+                return $storageProvider->credentials->url . $filePath;
+            }
+
+            return $storageProvider->credentials->url . $data->image;
+        }
+
+        $watermarkImagePath = getFilePath($type . '_watermark') . '/watermark_' . $data->image;
+        $mainImagePath = getFilePath($type) . '/' . $data->image;
+
+        if (file_exists($watermarkImagePath) && is_file($watermarkImagePath)) {
+            return asset($watermarkImagePath);
+        }
+
+        if (file_exists($mainImagePath) && is_file($mainImagePath)) {
+            return asset($mainImagePath);
+        }
+
+        return asset('assets/images/general/default.png');
+    }
+}
+
 if (!function_exists('building_route_params')) {
     function building_route_params($building)
     {
@@ -820,13 +850,13 @@ if (!function_exists('building_listing_unit_route_params')) {
 if (!function_exists('listing_unit_route_params')) {
     function listing_unit_route_params($listingUnit)
     {
-  
+
         return [
             'county' => slug($listingUnit->building->neighborhood->county->name),
             'neighborhood' => slug($listingUnit->building->neighborhood->name),
             'slug' => slug($listingUnit->building->name),
             'unit' => slug($listingUnit->unit_number),
-            'id' => $listingUnit->building->id,
+            'id' => $listingUnit->id,
         ];
     }
 }
