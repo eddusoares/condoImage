@@ -33,6 +33,8 @@
         ? (bool) $showMoreButton
         : (isset($sectionValues->show_more_button) ? (bool) $sectionValues->show_more_button : false);
 
+    $loadMoreEndpoint = $type === 'buildings' ? route('condo.building') : route('neighborhood');
+
     $listingConfig = [
         'type' => $type,
         'heading' => $heading,
@@ -44,6 +46,12 @@
         'limit' => isset($sectionValues->limit) ? (int) $sectionValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
+        'load_more' => $resolvedShowMoreButton ? [
+            'endpoint' => $loadMoreEndpoint,
+            'params' => (object) [],
+            'increment' => 3,
+            'max_limit' => 50,
+        ] : null,
     ];
 @endphp
 

@@ -39,12 +39,12 @@
         'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
-        'load_more' => [
+        'load_more' => $resolvedShowMoreButton ? [
             'endpoint' => route('neighborhood'),
-            'params' => [],
+            'params' => (object) [],
             'increment' => 3,
-            'max_limit' => 50
-        ],
+            'max_limit' => 50,
+        ] : null,
     ];
 @endphp
 

@@ -49,7 +49,7 @@
         $loadMoreMaxLimit = isset($loadMoreConfig['max_limit']) ? (int) $loadMoreConfig['max_limit'] : null;
     }
 @endphp
-
+ 
 <section class="neigh-section">
     <div class="container">
         <div class="section-head d-flex align-items-center justify-content-between">
@@ -59,11 +59,16 @@
                     <p class="section-subtitle">{{ __($subheading) }}</p>
                 @endif
             </div>
-            <form class="list-search d-flex align-items-center" action="{{ $searchAction }}" method="GET">
-                <span class="list-search__icon"><i class="fas fa-search"></i></span>
-                <input type="text" name="search" class="list-search__input" placeholder="Search"
-                       value="{{ request('search') }}">
-            </form>
+            <div class="list-search d-flex align-items-center listing-search-form">
+                <!-- <span class="list-search__icon"><i class="fas fa-search"></i></span> -->
+                <input type="text" name="q" class="list-search__input" placeholder="Search" autocomplete="off">
+                <button type="button" class="list-search__clear-btn" aria-label="Clear search" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+                <button type="button" class="list-search__submit-btn" aria-label="Search">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
         </div>
 
         <div class="row g-4 mb-5" id="listing-cards-container">
@@ -159,6 +164,63 @@
 </section>
 
 @if ($showMoreButton && !empty($loadMoreEndpoint))
+@push('style')
+<style>
+/* Estilos para o botão de busca */
+.list-search {
+    position: relative;
+}
+
+.list-search__submit-btn,
+.list-search__clear-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.list-search__submit-btn {
+    right: 8px;
+}
+
+.list-search__clear-btn {
+    right: 48px;
+}
+
+.list-search__submit-btn:hover,
+.list-search__clear-btn:hover {
+    color: #0E80BD;
+    background: rgba(14, 128, 189, 0.1);
+}
+
+.list-search__clear-btn:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.list-search__submit-btn:active,
+.list-search__clear-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.list-search__input {
+    padding-right: 88px !important; /* Espaço para ambos os botões */
+}
+</style>
+@endpush
+
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -193,7 +255,130 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Search functionality
+    const searchForm = document.querySelector('.listing-search-form');
+    const searchInput = searchForm ? searchForm.querySelector('input[name="q"]') : null;
+    const searchButton = searchForm ? searchForm.querySelector('.list-search__submit-btn') : null;
+    const clearButton = searchForm ? searchForm.querySelector('.list-search__clear-btn') : null;
+    let isSearchActive = false;
+
+    if (searchForm && searchInput && searchButton && clearButton) {
+        // Show/hide clear button based on input content
+        const toggleClearButton = () => {
+            if (searchInput.value.trim()) {
+                clearButton.style.display = 'flex';
+            } else {
+                clearButton.style.display = 'none';
+            }
+        };
+
+        // Monitor input changes to toggle clear button
+        searchInput.addEventListener('input', toggleClearButton);
+
+        const performSearch = async () => {
+            const searchQuery = searchInput.value.trim();
+            
+            if (searchQuery) {
+                isSearchActive = true;
+                // Hide the "More" button during search
+                loadMoreBtn.style.display = 'none';
+                
+                try {
+                    const requestUrl = new URL(endpoint, window.location.origin);
+                    requestUrl.searchParams.set('q', searchQuery);
+                    
+                    console.log('Search URL:', requestUrl.toString()); // Debug
+
+                    const response = await fetch(requestUrl.toString(), {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await response.json();
+                    
+                    console.log('Search response:', data); // Debug
+                    console.log('Search type:', type); // Debug
+
+                    // Clear current cards and show all search results
+                    container.innerHTML = '';
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            const cardHtml = generateCardHtml(item, type);
+                            container.insertAdjacentHTML('beforeend', cardHtml);
+                        });
+                    } else {
+                        container.innerHTML = '<div class="col-12"><p class="text-center text-muted">No results found for "' + searchQuery + '"</p></div>';
+                    }
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    container.innerHTML = '<div class="col-12"><p class="text-center text-danger">Error loading search results</p></div>';
+                }
+            } else {
+                // Clear search - reload initial content
+                clearSearch();
+            }
+        };
+
+        const clearSearch = async () => {
+            searchInput.value = '';
+            toggleClearButton();
+            isSearchActive = false;
+            currentLimit = parseInt(loadMoreBtn.dataset.currentLimit, 10); // Reset to original limit
+            
+            try {
+                const requestUrl = new URL(endpoint, window.location.origin);
+                requestUrl.searchParams.set('limit', currentLimit);
+                Object.entries(extraParams).forEach(([key, value]) => {
+                    requestUrl.searchParams.set(key, value);
+                });
+
+                const response = await fetch(requestUrl.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+
+                // Clear current cards and show initial results
+                container.innerHTML = '';
+                
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const cardHtml = generateCardHtml(item, type);
+                        container.insertAdjacentHTML('beforeend', cardHtml);
+                    });
+                    
+                    // Show "More" button if there might be more results
+                    if (data.length >= currentLimit && (maxLimit === 0 || currentLimit < maxLimit)) {
+                        loadMoreBtn.style.display = 'block';
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'More';
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                } else {
+                    container.innerHTML = '<div class="col-12"><p class="text-center text-muted">No items found</p></div>';
+                    loadMoreBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error reloading content:', error);
+            }
+        };
+
+        // Handle search button click only
+        searchButton.addEventListener('click', performSearch);
+
+        // Handle clear button click
+        clearButton.addEventListener('click', clearSearch);
+
+        // Initialize clear button visibility
+        toggleClearButton();
+    }
+
     loadMoreBtn.addEventListener('click', function() {
+        if (isSearchActive) return; // Don't load more during search
+
         const nextLimit = maxLimit > 0 ? Math.min(currentLimit + increment, maxLimit) : currentLimit + increment;
 
         if (nextLimit === currentLimit) {

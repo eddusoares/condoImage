@@ -69,7 +69,7 @@
 		'limit' => $initialLimit,
 		'search_action' => $searchAction ?? $defaultSearchAction,
 		'show_more_button' => $resolvedShowMoreButton,
-		'load_more' => $resolvedShowMoreButton ? [
+		'load_more' => $resolvedShowMoreButton && $loadMoreEndpoint ? [
 			'endpoint' => $loadMoreEndpoint,
 			'params' => (object) [],
 			'increment' => 3,
