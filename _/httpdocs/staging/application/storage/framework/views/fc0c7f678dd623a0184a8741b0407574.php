@@ -1,5 +1,5 @@
-@php
-    $galleryContent = getContent('list_all_neighborhood.content', true);
+﻿<?php
+    $galleryContent = getContent('neighborhood_gallery.content', true);
     $galleryValues = $galleryContent->data_values ?? (object)[];
 
     $defaultTitle = $defaultTitle ?? 'All neighborhoods';
@@ -35,18 +35,13 @@
         'button_text' => $buttonText,
         'button_link' => $buttonLink,
         'show_meta' => $resolvedShowMeta,
-        'items' => isset($items) ? $items : null,
-        'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : 6,
+        'items' => $neighs ?? null,
+        'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
-        'section_id' => 'list_all_neighborhoods_page', // Unique ID for neighborhoods page section
-        'load_more' => $resolvedShowMoreButton ? [
-            'endpoint' => route('neighborhood'),
-            'params' => (object) [],
-            'increment' => 3,
-            'max_limit' => 50,
-        ] : null,
+        'section_id' => 'neighborhood_gallery_page', // Unique ID for gallery section
     ];
-@endphp
+?>
 
-@include($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig])
+<?php echo $__env->make($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/neighborhood_gallery.blade.php ENDPATH**/ ?>

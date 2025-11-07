@@ -39,6 +39,7 @@
         'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
+        'section_id' => 'neighborhood_gallery_page', // Unique ID for gallery section
     ];
 @endphp
 

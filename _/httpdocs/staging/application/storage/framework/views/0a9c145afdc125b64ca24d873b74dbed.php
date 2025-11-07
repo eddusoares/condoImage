@@ -1,8 +1,8 @@
-@php
-    $sectionContent = getContent('list_all_buildings.content', true);
-    $sectionValues = $sectionContent->data_values ?? (object)[];
+﻿<?php
+    $categoryContent = getContent('category.content', true);
+    $categoryValues = $categoryContent->data_values ?? (object)[];
 
-    $type = $type ?? ($sectionValues->type ?? 'buildings');
+    $type = $type ?? ($categoryValues->type ?? 'buildings');
     $defaultTitle = $defaultTitle
         ?? ($type === 'buildings' ? 'All buildings' : 'All neighborhoods');
     $defaultSubheading = $defaultSubheading ?? null;
@@ -15,10 +15,10 @@
 
     $replacements = isset($replacements) && is_array($replacements) ? $replacements : [];
 
-    $headingSource = $customTitle ?? ($sectionValues->heading ?? $defaultTitle);
-    $subheadingSource = $customSubheading ?? ($sectionValues->subheading ?? $defaultSubheading);
-    $buttonTextSource = $customButtonText ?? ($sectionValues->button_text ?? $defaultButtonText);
-    $buttonLinkSource = $customButtonLink ?? ($sectionValues->button_link ?? $defaultButtonLink);
+    $headingSource = $customTitle ?? ($categoryValues->heading ?? $defaultTitle);
+    $subheadingSource = $customSubheading ?? ($categoryValues->subheading ?? $defaultSubheading);
+    $buttonTextSource = $customButtonText ?? ($categoryValues->button_text ?? $defaultButtonText);
+    $buttonLinkSource = $customButtonLink ?? ($categoryValues->button_link ?? $defaultButtonLink);
 
     $heading = $headingSource ? strtr($headingSource, $replacements) : null;
     $subheading = $subheadingSource ? strtr($subheadingSource, $replacements) : null;
@@ -27,11 +27,11 @@
 
     $resolvedShowMeta = isset($showMeta)
         ? (bool) $showMeta
-        : (isset($sectionValues->show_meta) ? (bool) $sectionValues->show_meta : false);
+        : (isset($categoryValues->show_meta) ? (bool) $categoryValues->show_meta : false);
 
     $resolvedShowMoreButton = isset($showMoreButton)
         ? (bool) $showMoreButton
-        : (isset($sectionValues->show_more_button) ? (bool) $sectionValues->show_more_button : false);
+        : (isset($categoryValues->show_more_button) ? (bool) $categoryValues->show_more_button : false);
 
     $loadMoreEndpoint = $type === 'buildings' ? route('condo.building') : route('neighborhood');
 
@@ -43,10 +43,10 @@
         'button_link' => $buttonLink,
         'show_meta' => $resolvedShowMeta,
         'items' => isset($items) ? $items : ($buildingsData ?? null),
-        'limit' => isset($sectionValues->limit) ? (int) $sectionValues->limit : null,
+        'limit' => isset($categoryValues->limit) ? (int) $categoryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
-        'section_id' => 'list_all_buildings_page', // Unique ID for buildings page section
+        'section_id' => 'category_home', // Unique ID for Home page category section
         'load_more' => $resolvedShowMoreButton ? [
             'endpoint' => $loadMoreEndpoint,
             'params' => (object) [],
@@ -54,6 +54,7 @@
             'max_limit' => 50,
         ] : null,
     ];
-@endphp
+?>
 
-@include($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig])
+<?php echo $__env->make($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/category.blade.php ENDPATH**/ ?>

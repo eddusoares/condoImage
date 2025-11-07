@@ -1,4 +1,4 @@
-@php
+<?php
     $galleryContent = getContent('list_all_neighborhood.content', true);
     $galleryValues = $galleryContent->data_values ?? (object)[];
 
@@ -47,6 +47,7 @@
             'max_limit' => 50,
         ] : null,
     ];
-@endphp
+?>
 
-@include($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig])
+<?php echo $__env->make($activeTemplate . 'sections.partials.listing_cards', ['listingConfig' => $listingConfig], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/list_all_neighborhood.blade.php ENDPATH**/ ?>

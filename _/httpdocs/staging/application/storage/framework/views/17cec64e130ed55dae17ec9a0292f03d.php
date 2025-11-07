@@ -1,4 +1,4 @@
-@php
+<?php
     $config = $listingConfig ?? [];
     $type = $config['type'] ?? 'buildings';
     $heading = $config['heading'] ?? ($type === 'buildings' ? 'All buildings' : 'All neighborhoods / cities');
@@ -53,33 +53,33 @@
         $loadMoreIncrement = isset($loadMoreConfig['increment']) ? max(1, (int) $loadMoreConfig['increment']) : 3;
         $loadMoreMaxLimit = isset($loadMoreConfig['max_limit']) ? (int) $loadMoreConfig['max_limit'] : null;
     }
-@endphp
+?>
  
-<section class="neigh-section" data-listing-component="{{ $uniqueId }}">
+<section class="neigh-section" data-listing-component="<?php echo e($uniqueId); ?>">
     <div class="container">
         <div class="section-head d-flex align-items-center justify-content-between">
             <div>
-                <h2>{{ __($heading) }}</h2>
-                @if (!empty($subheading))
-                    <p class="section-subtitle">{{ __($subheading) }}</p>
-                @endif
+                <h2><?php echo e(__($heading)); ?></h2>
+                <?php if(!empty($subheading)): ?>
+                    <p class="section-subtitle"><?php echo e(__($subheading)); ?></p>
+                <?php endif; ?>
             </div>
-            <div class="list-search d-flex align-items-center listing-search-form" data-search-form="{{ $uniqueId }}" data-search-endpoint="{{ $searchAction }}">
+            <div class="list-search d-flex align-items-center listing-search-form" data-search-form="<?php echo e($uniqueId); ?>" data-search-endpoint="<?php echo e($searchAction); ?>">
                 <!-- <span class="list-search__icon"><i class="fas fa-search"></i></span> -->
-                <input type="text" name="q" class="list-search__input" placeholder="Search" autocomplete="off" data-search-input="{{ $uniqueId }}">
-                <button type="button" class="list-search__clear-btn" aria-label="Clear search" style="display: none;" data-clear-btn="{{ $uniqueId }}">
+                <input type="text" name="q" class="list-search__input" placeholder="Search" autocomplete="off" data-search-input="<?php echo e($uniqueId); ?>">
+                <button type="button" class="list-search__clear-btn" aria-label="Clear search" style="display: none;" data-clear-btn="<?php echo e($uniqueId); ?>">
                     <i class="fas fa-times"></i>
                 </button>
-                <button type="button" class="list-search__submit-btn" aria-label="Search" data-search-btn="{{ $uniqueId }}">
+                <button type="button" class="list-search__submit-btn" aria-label="Search" data-search-btn="<?php echo e($uniqueId); ?>">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
         </div>
 
-        <div class="row g-4 mb-5" id="listing-cards-container-{{ $uniqueId }}" data-container="{{ $uniqueId }}">
-            @foreach ($items as $item)
+        <div class="row g-4 mb-5" id="listing-cards-container-<?php echo e($uniqueId); ?>" data-container="<?php echo e($uniqueId); ?>">
+            <?php $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="col-12 col-sm-6 col-lg-4">
-                    @php
+                    <?php
                         $cardHref = '#';
                         $label = '';
                         $imageSrc = '';
@@ -119,58 +119,62 @@
                                 }
                             }
                         }
-                    @endphp
-                    <a href="{{ $cardHref }}" class="neigh-card d-block {{ $showMeta ? 'with-meta' : '' }}">
-                        <img class="neigh-card__img" src="{{ $imageSrc }}" alt="{{ __($label) }}">
-                        <div class="neigh-card__label">{{ __($label) }}</div>
-                        @if ($showMeta)
+                    ?>
+                    <a href="<?php echo e($cardHref); ?>" class="neigh-card d-block <?php echo e($showMeta ? 'with-meta' : ''); ?>">
+                        <img class="neigh-card__img" src="<?php echo e($imageSrc); ?>" alt="<?php echo e(__($label)); ?>">
+                        <div class="neigh-card__label"><?php echo e(__($label)); ?></div>
+                        <?php if($showMeta): ?>
                             <div class="neigh-card__meta">
-                                @if ($type === 'buildings')
-                                    <span class="meta-left">{{ $imagesCount }}
-                                        {{ \Illuminate\Support\Str::plural('Image', $imagesCount) }}</span>
+                                <?php if($type === 'buildings'): ?>
+                                    <span class="meta-left"><?php echo e($imagesCount); ?>
+
+                                        <?php echo e(\Illuminate\Support\Str::plural('Image', $imagesCount)); ?></span>
                                     <span class="sep" aria-hidden="true"></span>
-                                    <span class="meta-right">{{ $metaRight }}
-                                        {{ \Illuminate\Support\Str::plural('Listing', $metaRight) }}</span>
-                                @else
-                                    <span class="meta-left">{{ $buildingsCount }}
-                                        {{ \Illuminate\Support\Str::plural('Building', $buildingsCount) }}</span>
+                                    <span class="meta-right"><?php echo e($metaRight); ?>
+
+                                        <?php echo e(\Illuminate\Support\Str::plural('Listing', $metaRight)); ?></span>
+                                <?php else: ?>
+                                    <span class="meta-left"><?php echo e($buildingsCount); ?>
+
+                                        <?php echo e(\Illuminate\Support\Str::plural('Building', $buildingsCount)); ?></span>
                                     <span class="sep" aria-hidden="true"></span>
-                                    <span class="meta-right">{{ $imagesCount }}
-                                        {{ \Illuminate\Support\Str::plural('image', $imagesCount) }}</span>
-                                @endif
+                                    <span class="meta-right"><?php echo e($imagesCount); ?>
+
+                                        <?php echo e(\Illuminate\Support\Str::plural('image', $imagesCount)); ?></span>
+                                <?php endif; ?>
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </a>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
-        @if ($showMoreButton && !empty($loadMoreEndpoint))
+        <?php if($showMoreButton && !empty($loadMoreEndpoint)): ?>
             <div class="text-center mb-3">
                 <button
-                    id="load-more-{{ $uniqueId }}"
+                    id="load-more-<?php echo e($uniqueId); ?>"
                     class="btn button"
-                    data-current-limit="{{ $limit }}"
-                    data-type="{{ $type }}"
-                    data-endpoint="{{ $loadMoreEndpoint }}"
-                    data-increment="{{ $loadMoreIncrement }}"
-                    data-params='@json($loadMoreParams)'
-                    data-load-more-btn="{{ $uniqueId }}"
-                    @if(!is_null($loadMoreMaxLimit)) data-max-limit="{{ $loadMoreMaxLimit }}" @endif
+                    data-current-limit="<?php echo e($limit); ?>"
+                    data-type="<?php echo e($type); ?>"
+                    data-endpoint="<?php echo e($loadMoreEndpoint); ?>"
+                    data-increment="<?php echo e($loadMoreIncrement); ?>"
+                    data-params='<?php echo json_encode($loadMoreParams, 15, 512) ?>'
+                    data-load-more-btn="<?php echo e($uniqueId); ?>"
+                    <?php if(!is_null($loadMoreMaxLimit)): ?> data-max-limit="<?php echo e($loadMoreMaxLimit); ?>" <?php endif; ?>
                 >More</button>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @if (! $showMoreButton)
+        <?php if(! $showMoreButton): ?>
             <div class="text-center">
-                <a href="{{ $buttonLink }}" class="btn button">{{ __($buttonText) }}</a>
+                <a href="<?php echo e($buttonLink); ?>" class="btn button"><?php echo e(__($buttonText)); ?></a>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 </section>
 
-@if ($showMoreButton && !empty($loadMoreEndpoint))
-@push('style')
+<?php if($showMoreButton && !empty($loadMoreEndpoint)): ?>
+<?php $__env->startPush('style'); ?>
 <style>
 /* Estilos para o botão de busca */
 .list-search {
@@ -225,9 +229,9 @@
     padding-right: 88px !important; /* Espaço para ambos os botões */
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('script')
+<?php $__env->startPush('script'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-listing-component]').forEach(function (component) {
@@ -455,5 +459,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-@endpush
-@endif
+<?php $__env->stopPush(); ?>
+<?php endif; ?>
+<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/partials/listing_cards.blade.php ENDPATH**/ ?>

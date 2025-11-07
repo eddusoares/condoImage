@@ -46,6 +46,7 @@
         'limit' => isset($categoryValues->limit) ? (int) $categoryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
+        'section_id' => 'category_home', // Unique ID for Home page category section
         'load_more' => $resolvedShowMoreButton ? [
             'endpoint' => $loadMoreEndpoint,
             'params' => (object) [],
