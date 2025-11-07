@@ -828,7 +828,7 @@ if (!function_exists('listing_unit_route_params')) {
             'neighborhood' => slug($listingUnit->building->neighborhood->name),
             'slug' => slug($listingUnit->building->name),
             'unit' => slug($listingUnit->unit_number),
-            'id' => $listingUnit->building->id,
+            'id' => $listingUnit->id,
         ];
     }
 }
