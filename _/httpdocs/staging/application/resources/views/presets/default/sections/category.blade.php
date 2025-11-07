@@ -29,6 +29,10 @@
         ? (bool) $showMeta
         : (isset($categoryValues->show_meta) ? (bool) $categoryValues->show_meta : false);
 
+    $resolvedShowMoreButton = isset($showMoreButton)
+        ? (bool) $showMoreButton
+        : (isset($categoryValues->show_more_button) ? (bool) $categoryValues->show_more_button : false);
+
     $listingConfig = [
         'type' => $type,
         'heading' => $heading,
@@ -39,6 +43,7 @@
         'items' => isset($items) ? $items : ($buildingsData ?? null),
         'limit' => isset($categoryValues->limit) ? (int) $categoryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
+        'show_more_button' => $resolvedShowMoreButton,
     ];
 @endphp
 

@@ -30,6 +30,9 @@ Route::controller('SiteController')->group(function () {
     Route::get('/explore', 'exploreFiles')->name('explore');
     Route::get('county/{slug}/{id}', 'county')->name('county');
     Route::get('/neighborhood', 'neighborhood')->name('neighborhood');
+    Route::get('neighborhood/{neighborhood}/buildings', 'neighborhoodBuildings')
+        ->name('neighborhood.buildings')
+        ->whereNumber('neighborhood');
     Route::get('/{county}/{slug}/{id}', 'neighborhoodDetails')->name('neighborhood.details');
     Route::get('/condo-building', 'condoBuilding')->name('condo.building');
     Route::get('/{county}/{neighborhood}/{slug}/{id}', 'condoBuildingDetails')->name('condo.building.details');

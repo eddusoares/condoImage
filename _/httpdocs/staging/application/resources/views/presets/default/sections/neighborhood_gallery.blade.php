@@ -24,6 +24,15 @@
         ? (bool) $showMeta
         : (isset($galleryValues->show_meta) ? (bool) $galleryValues->show_meta : false);
 
+    $resolvedShowMoreButton = isset($showMoreButton)
+        ? (bool) $showMoreButton
+        : (isset($galleryValues->show_more_button) ? (bool) $galleryValues->show_more_button : false);
+
+    $initialLimit = 6;
+    $maxLimit = 9;
+
+    $loadMoreEndpoint = route('neighborhood');
+
     $listingConfig = [
         'type' => 'neighborhoods',
         'heading' => $heading,
@@ -32,8 +41,15 @@
         'button_link' => $buttonLink,
         'show_meta' => $resolvedShowMeta,
         'items' => $neighs ?? null,
-        'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : null,
+        'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : $initialLimit,
         'search_action' => $searchAction ?? $defaultSearchAction,
+        'show_more_button' => $resolvedShowMoreButton,
+        'load_more' => $resolvedShowMoreButton ? [
+            'endpoint' => $loadMoreEndpoint,
+            'params' => (object) [],
+            'increment' => 3,
+            'max_limit' => $maxLimit,
+        ] : null,
     ];
 @endphp
 

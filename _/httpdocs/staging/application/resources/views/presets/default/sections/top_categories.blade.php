@@ -1,22 +1,18 @@
 ﻿@php
     $tc = getContent('top_categories.content', true);
-    // Espera receber $neighborhoods (Collection) do include. Se nÃ£o vier, carrega 10 aleatÃ³rios.
+    // Espera receber $buildings (Collection) do include. Se não vier, carrega 10 aleatórios.
     try {
-        if (!isset($neighborhoods) || $neighborhoods->isEmpty()) {
-            $neighborhoods = App\Models\Neighborhood::with('county')->where('status', 1)->inRandomOrder()->take(10)->get();
+        if (!isset($buildings) || $buildings->isEmpty()) {
+            $buildings = App\Models\Building::with(['neighborhood', 'buildingImages'])->where('status', 1)->inRandomOrder()->take(10)->get();
         }
 
-        // Verificar se temos neighborhoods para mostrar
-        if ($neighborhoods->isEmpty()) {
-            $neighborhoods = collect(); // Collection vazia para evitar erros
+        // Verificar se temos buildings para mostrar
+        if ($buildings->isEmpty()) {
+            $buildings = collect(); // Collection vazia para evitar erros
         }
-
-        // Agrupar neighborhoods em chunks de 2 para o carousel
-        $chunkedNeighborhoods = $neighborhoods->chunk(2);
     } catch (Exception $e) {
         // Em caso de erro, usar collection vazia
-        $neighborhoods = collect();
-        $chunkedNeighborhoods = collect();
+        $buildings = collect();
     }
 @endphp
 
@@ -49,11 +45,11 @@
             <div class="col-lg-6">
                 <div id="categoriesCarousel" class="tc-carousel">
                     <div class="tc-carousel-track">
-                        @foreach ($neighborhoods as $item)
+                        @foreach ($buildings as $item)
                             @php
-                                $cardImage = getImage(getFilePath('neighborhood') . '/' . $item->image);
+                                $cardImage = getImage(getFilePath('building') . '/' . $item->image);
                             @endphp
-                            <a href="{{ route('neighborhood.details', ['county' => slug($item->county->name), 'slug' => slug($item->name), 'id' => $item->id]) }}"
+                            <a href="{{ route('condo.building.details', building_route_params($item)) }}"
                                 class="tc-card"
                                 data-preview-image="{{ $cardImage }}"
                                 data-preview-label="{{ $item->name }}">
@@ -180,12 +176,13 @@
                         button.dataset.slide = '0';
                         button.setAttribute('aria-current', 'false');
                         button.addEventListener('click', function () {
-                            const target = Number(button.dataset.slide);
-                            if (!Number.isNaN(target)) {
-                                currentIndex = Math.max(0, Math.min(target, totalSlides - 1));
-                                currentIndex = Math.min(currentIndex, maxIndex);
-                                applyTransform(true);
-                            }
+                        const target = Number(button.dataset.slide);
+                        if (!Number.isNaN(target)) {
+                            currentIndex = Math.max(0, Math.min(target, totalSlides - 1));
+                            // espelha regra de cliques: posição do clique = índice atual
+                            clickPos = currentIndex;
+                            applyTransform(true);
+                        }
                         });
                         container.appendChild(button);
                         buttons.push(button);
@@ -201,11 +198,15 @@
                 }
             });
 
-            let currentIndex = 0;
-            let moveDistance = 0;
-            let maxIndex = 0;
+            let currentIndex = 0;      // slide atual (0..totalSlides-1)
+            let moveDistance = 0;      // largura de 1 card + gap
             let resizeTimer;
             const SWIPE_THRESHOLD = 40;
+
+            // Navegação por cliques: com N slides, existem N-1 cliques válidos
+            let clickPos = 0;
+            const totalImages = totalSlides;
+            let maxClicks = Math.max(0, totalImages - 1);
 
             function ensureSpacing(set) {
                 if (!set) {
@@ -299,12 +300,16 @@
             }
 
             function updateNavButtons() {
-                const disabled = maxIndex === 0;
+                const atStart = clickPos === 0 || maxClicks === 0;
+                const atEnd   = clickPos >= maxClicks || maxClicks === 0;
+
                 prevButtons.forEach((btn) => {
-                    btn.disabled = disabled;
+                    btn.disabled = atStart;
+                    btn.style.opacity = btn.disabled ? '0.5' : '1';
                 });
                 nextButtons.forEach((btn) => {
-                    btn.disabled = disabled;
+                    btn.disabled = atEnd;
+                    btn.style.opacity = btn.disabled ? '0.5' : '1';
                 });
             }
 
@@ -329,15 +334,16 @@
                 const firstCard = track.querySelector('.tc-card');
                 if (!firstCard) {
                     moveDistance = 0;
-                    maxIndex = 0;
+                    maxClicks = 0;
                     updateNavButtons();
                     return;
                 }
 
+                // reset dos indicadores
                 indicatorSets.forEach((set) => {
                     if (set.animationTimer) {
-                        clearTimeout(set.animationTimer);
-                        set.animationTimer = null;
+                    clearTimeout(set.animationTimer);
+                    set.animationTimer = null;
                     }
                     set.container.style.transition = 'none';
                     set.container.style.transform = 'translateX(0)';
@@ -351,31 +357,32 @@
 
                 moveDistance = cardWidth + gapValue;
 
-                const visibleWidth = carousel.getBoundingClientRect().width;
-                const visibleCount = Math.max(1, Math.floor((visibleWidth + gapValue) / (moveDistance || 1)));
+                // Regra fixa por total de imagens
+                maxClicks = Math.max(0, totalSlides - 1);
 
-                maxIndex = Math.max(0, totalSlides - visibleCount);
-                if (currentIndex > maxIndex) {
-                    currentIndex = maxIndex;
-                }
+                // mantém coerência se o tamanho mudou
+                clickPos = Math.min(clickPos, maxClicks);
+                currentIndex = clickPos;
 
                 applyTransform(false);
             }
 
             function goNext() {
-                if (maxIndex === 0) {
-                    return;
+                if (maxClicks === 0) return;
+                if (clickPos < maxClicks) {
+                    clickPos++;
+                    currentIndex = Math.min(currentIndex + 1, totalSlides - 1);
+                    applyTransform(true);
                 }
-                currentIndex = currentIndex < maxIndex ? currentIndex + 1 : 0;
-                applyTransform(true);
             }
 
             function goPrev() {
-                if (maxIndex === 0) {
-                    return;
+                if (maxClicks === 0) return;
+                if (clickPos > 0) {
+                    clickPos--;
+                    currentIndex = Math.max(currentIndex - 1, 0);
+                    applyTransform(true);
                 }
-                currentIndex = currentIndex > 0 ? currentIndex - 1 : maxIndex;
-                applyTransform(true);
             }
 
             nextButtons.forEach((btn) => {

@@ -111,7 +111,7 @@
         <!-- Footage -->
         <div class="info-section">
             <div class="info-section__header">
-                <h3>Footage</h3>
+                <h3>Footage2/h3>
                 <button class="info-section__toggle">+</button>
             </div>
             <div class="info-section__content" style="display: none;">

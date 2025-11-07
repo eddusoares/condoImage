@@ -10,16 +10,16 @@
     <section id="neighDetailsHeroCarousel" class="banner-section-two carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
         <!-- Indicators -->
         <div class="carousel-indicators" id="neighDetailsHeroIndicators">
-            @for ($i = 0; $i < 4; $i++)
-                <button type="button" class="{{ $i === 0 ? 'active' : '' }}" data-virtual-index="{{ $i }}"
-                    aria-current="{{ $i === 0 ? 'true' : 'false' }}" aria-label="Indicator {{ $i + 1 }}"></button>
+            @for ($i = 0; $i < $slides->count(); $i++)
+                <button type="button" class="{{ $i === 0 ? 'active' : '' }}" data-bs-target="#neighDetailsHeroCarousel" data-bs-slide-to="{{ $i }}"
+                    aria-current="{{ $i === 0 ? 'true' : 'false' }}" aria-label="Slide {{ $i + 1 }}"></button>
             @endfor
         </div>
 
         <div class="carousel-inner">
             @if($slides->count())
                 @foreach ($slides as $item)
-                    <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+                    <div class="carousel-item {{ $loop->first ? 'active' : '' }}" data-building-name="{{ __($item->name) }}" data-building-url="{{ route('condo.building.details', building_route_params($item)) }}">
                         <div class="banner-thumb bg-img bg-overlay py-120" data-background="{{ getImage(getFilePath('building') . '/' . $item->image) }}"></div>
                     </div>
                 @endforeach
@@ -39,16 +39,16 @@
                 <div class="neigh-hero__breadcrumb">
                     <a href="{{ route('home') }}" class="breadcrumb-home">Home</a>
                     <span class="breadcrumb-pipe"></span>
-                    <a href="{{ route('county', ['slug' => slug($neighborhood->county->name), 'id' => $neighborhood->county->id]) }}" class="breadcrumb-county">{{ $neighborhood->county->name }}</a>
-                    <span class="breadcrumb-pipe"></span>
+                    <!-- <a href="{{ route('county', ['slug' => slug($neighborhood->county->name), 'id' => $neighborhood->county->id]) }}" class="breadcrumb-county">{{ $neighborhood->county->name }}</a>
+                    <span class="breadcrumb-pipe"></span> -->
                     <a href="{{ route('neighborhood') }}" class="breadcrumb-section">Neighborhood</a>
                     <span class="breadcrumb-pipe"></span>
                     <span class="breadcrumb-current">{{ $neighborhood->name }}</span>
                 </div>
                 <div class="neigh-hero__featured">Featured</div>
-                <h1 class="neigh-hero__title">{{ __($neighborhood->name) }}</h1>
-                <a href="{{ $neighborhoodUrl }}" class="neigh-hero__btn">
-                    <span class="btn-text">See "{{ __($neighborhood->name) }}"</span>
+                <h1 class="neigh-hero__title" id="dynamic-title">{{ __($slides->first()->name ?? $neighborhood->name) }}</h1>
+                <a href="{{ $slides->first() ? route('condo.building.details', building_route_params($slides->first())) : $neighborhoodUrl }}" class="neigh-hero__btn" id="dynamic-btn">
+                    <span class="btn-text">See "<span id="dynamic-btn-text">{{ __($slides->first()->name ?? $neighborhood->name) }}</span>"</span>
                     <div class="btn-arrow">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 15 14" fill="none" class="arrow-svg">
                             <path d="M12.5 2L1.5 13" stroke="#414145" stroke-width="1.5" stroke-linecap="round"/>
@@ -71,11 +71,13 @@
     </section>
 
     @if (isset($sections) && $sections && $sections->secs)
-        @foreach (json_decode($sections->secs) as $sec)
-            @include($activeTemplate . 'sections.' . $sec)
+        @foreach (json_decode($sections->secs) as $sectionIndex => $sec)
+            <div id="{{ $sec }}" data-section="{{ $sec }}" data-index="{{ $sectionIndex + 1 }}">
+                @include($activeTemplate . 'sections.' . $sec)
+            </div>
         @endforeach
     @else
-        <div class="neigh-page">
+        <div id="category" data-section="category" data-index="1" class="neigh-page">
             <!-- All Buildings in [Neighborhood Name] -->
             @include($activeTemplate . 'sections.category', [
                 'type' => 'buildings',
@@ -92,7 +94,125 @@
         </div>
 
         <!-- Visual compilation CTA -->
-        @include('presets.default.sections.visual_compilation')
+        <div id="visual_compilation" data-section="visual_compilation" data-index="2">
+            @include('presets.default.sections.visual_compilation')
+        </div>
     @endif
 
 @endsection
+
+@push('script')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById('neighDetailsHeroCarousel');
+    const dynamicTitle = document.getElementById('dynamic-title');
+    const dynamicBtnText = document.getElementById('dynamic-btn-text');
+    const dynamicBtn = document.getElementById('dynamic-btn');
+
+    function updateOverlay() {
+        const activeItem = carousel.querySelector('.carousel-item.active');
+        if (activeItem && activeItem.dataset.buildingName) {
+            dynamicTitle.textContent = activeItem.dataset.buildingName;
+            dynamicBtnText.textContent = activeItem.dataset.buildingName;
+            dynamicBtn.href = activeItem.dataset.buildingUrl;
+        }
+    }
+
+    // Update on slide change
+    carousel.addEventListener('slid.bs.carousel', updateOverlay);
+
+    // Initial update
+    updateOverlay();
+});
+</script>
+
+<!-- Section Anchor Navigation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Section anchor navigation system
+    function findSectionByHash(hash) {
+        if (!hash) return null;
+        
+        // Remove # and normalize
+        const target = hash.substring(1).trim().toLowerCase();
+        if (!target) return null;
+        
+        // Priority 1: Try exact section name match
+        let element = document.getElementById(target);
+        if (element) return element;
+        
+        // Priority 2: Try data-section attribute match
+        element = document.querySelector(`[data-section="${target}"]`);
+        if (element) return element;
+        
+        // Priority 3: If it's a number, try section-{number} format
+        if (/^\d+$/.test(target)) {
+            element = document.getElementById(`section-${target}`);
+            if (element) return element;
+            
+            // Try by data-index
+            element = document.querySelector(`[data-index="${target}"]`);
+            if (element) return element;
+        }
+        
+        return null;
+    }
+    
+    function scrollToSection(element) {
+        if (!element) return;
+        
+        // Calculate header offset (adjust as needed)
+        const headerHeight = 80;
+        const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
+        const offsetTop = elementTop - headerHeight;
+        
+        // Smooth scroll to section
+        window.scrollTo({
+            top: offsetTop,
+            behavior: 'smooth'
+        });
+        
+        // Add highlight effect
+        // element.style.transition = 'box-shadow 0.3s ease';
+        // element.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.3)';
+        
+        // setTimeout(() => {
+        //     element.style.boxShadow = '';
+        // }, 2000);
+    }
+    
+    function handleAnchorNavigation() {
+        const hash = window.location.hash;
+        if (hash) {
+            // Wait for potential dynamic content
+            let attempts = 0;
+            const maxAttempts = 20; // 2 seconds max
+            
+            function tryScroll() {
+                const element = findSectionByHash(hash);
+                if (element) {
+                    scrollToSection(element);
+                    return;
+                }
+                
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(tryScroll, 100);
+                }
+            }
+            
+            tryScroll();
+        }
+    }
+    
+    // Handle initial load
+    handleAnchorNavigation();
+    
+    // Handle hash changes
+    window.addEventListener('hashchange', handleAnchorNavigation);
+    
+    // Handle dynamic content loading
+    document.addEventListener('contentLoaded', handleAnchorNavigation);
+});
+</script>
+@endpush

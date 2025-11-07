@@ -1,5 +1,26 @@
 @extends('admin.layouts.app')
 @section('panel')
+
+@php
+    // Get current page slug for section filtering
+    $currentPageSlug = $pdata->slug ?? null;
+    
+    // Filter sections based on page restrictions
+    $filteredSections = [];
+    foreach($sections as $k => $secs) {
+        // Check if section has page restrictions
+        if (isset($secs['pages']) && is_array($secs['pages'])) {
+            // Section has page restrictions - only show if current page is in the allowed list
+            if ($currentPageSlug && in_array($currentPageSlug, $secs['pages'])) {
+                $filteredSections[$k] = $secs;
+            }
+        } else {
+            // Section has no restrictions - show on all pages (existing behavior)
+            $filteredSections[$k] = $secs;
+        }
+    }
+@endphp
+
 @if($pdata->is_default == 0)
 <div class="row mb-4">
     <div class="col-md-12">
@@ -46,7 +67,7 @@
             </div>
             <div class="card-body">
                 <ol class="simple_with_no_drop vertical">
-                    @foreach($sections as $k => $secs)
+                    @foreach($filteredSections as $k => $secs)
                     @if(!@$secs['no_selection'])
                     <li class="highlight icon-move clearfix d-flex align-items-center">
                         <i class="fas fa-expand-arrows-alt"></i>

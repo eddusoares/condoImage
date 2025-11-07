@@ -1358,6 +1358,8 @@ main,
     justify-content: center;
     align-items: center;
     gap: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
     border-radius: 32px;
     background: var(--Teal-500, #0e80bd);
     text-decoration: none;
@@ -1469,7 +1471,7 @@ main,
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 14px 28px !important;
+    padding: 14px 32px !important;
     border-radius: 999px !important;
     background: #0e80bd !important;
     color: #ffffff !important;
@@ -3762,6 +3764,7 @@ main,
     justify-content: center;
     align-items: center;
     gap: 10px;
+    padding: 0 24px;
     border-radius: 32px;
     background: var(--Teal-500, #0E80BD);
     border: none;

@@ -94,6 +94,22 @@ class SiteController extends Controller
 
     public function neighborhood()
     {
+        if (request()->ajax()) {
+            $limit = request('limit', 6);
+            $items = Neighborhood::with([
+                'county',
+                'buildings' => function ($q) {
+                    $q->where('status', 1);
+                },
+                'buildings.buildingListingUnits.listingImages',
+                'buildings.buildingImages'
+            ])
+                ->where('status', 1)
+                ->orderBy('name', 'asc')
+                ->take($limit)
+                ->get();
+            return response()->json($items);
+        }
 
         $pageTitle = "NeighborHood";
         $allNeighborhoods = Neighborhood::with(['county', 'buildings'])->where('status', 1)->get();
@@ -132,6 +148,7 @@ class SiteController extends Controller
             'buildings' => function ($query) {
                 $query->where('status', 1)
                     ->with([
+                        'neighborhood.county',
                         'buildingImages',
                         'buildingListingUnits',
                         'buildingListingUnits.listingImages',
@@ -162,8 +179,41 @@ class SiteController extends Controller
 
         return view($this->activeTemplate . 'neighborhood.neighborhood_details', compact('pageTitle', 'neighborhood', 'totalImages', 'totalBuildings', 'breadcrumbs', 'totalListingImages', 'allNeighborhoods', 'sections'));
     }
+
+    public function neighborhoodBuildings(Request $request, Neighborhood $neighborhood)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $limit = (int) $request->query('limit', 6);
+        $limit = max(1, min($limit, 9));
+
+        $items = $neighborhood->buildings()
+            ->where('status', 1)
+            ->with([
+                'neighborhood.county',
+                'buildingImages',
+                'buildingListingUnits',
+                'buildingListingUnits.listingImages',
+            ])
+            ->orderBy('name', 'asc')
+            ->take($limit)
+            ->get();
+
+        return response()->json($items);
+    }
     public function condoBuilding()
     {
+        if (request()->ajax()) {
+            $limit = request('limit', 6);
+            $items = Building::with(['neighborhood', 'neighborhood.county', 'buildingImages', 'buildingListingUnits'])
+                ->where('status', 1)
+                ->orderBy('name', 'asc')
+                ->take($limit)
+                ->get();
+            return response()->json($items);
+        }
 
         $pageTitle = 'Condo Building';
         $allNeighborhoods = Neighborhood::with([
