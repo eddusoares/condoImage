@@ -159,7 +159,7 @@
                                                 <div>
                                                     <h3 class="text-center mt-2">{{ $item->unit_number }}</h3>
                                                     <a class="btn btn--success w-100 mt-2"
-                                                        href="{{ route('condo.building.listing.images', ['slug' => slug($item->unit_number), 'id' => $item->id]) }}">@lang('View all images')</a>
+                                                        href="{{ route('condo.building.listing.images', listing_unit_route_params($item)) }}">@lang('View all images')</a>
                                                 </div>
                                             </div>
                                         </div>
