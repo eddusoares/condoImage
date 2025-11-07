@@ -94,6 +94,34 @@ class SiteController extends Controller
 
     public function neighborhood()
     {
+        if (request()->ajax()) {
+            $q = request('q'); // Search parameter
+            $limit = request('limit', 6);
+            
+            $query = Neighborhood::with([
+                'county',
+                'buildings' => function ($q) {
+                    $q->where('status', 1);
+                },
+                'buildings.buildingListingUnits.listingImages',
+                'buildings.buildingImages'
+            ])
+                ->where('status', 1);
+                
+            // If search parameter is provided, filter and return all results (ignore limit)
+            if ($q) {
+                $items = $query->where('name', 'LIKE', "%{$q}%")
+                ->orderBy('name', 'asc')
+                ->get();
+            } else {
+                // Normal pagination with limit
+                $items = $query->orderBy('name', 'asc')
+                              ->take($limit)
+                              ->get();
+            }
+            
+            return response()->json($items);
+        }
 
         $pageTitle = "NeighborHood";
         $allNeighborhoods = Neighborhood::with(['county', 'buildings'])->where('status', 1)->get();
@@ -132,6 +160,7 @@ class SiteController extends Controller
             'buildings' => function ($query) {
                 $query->where('status', 1)
                     ->with([
+                        'neighborhood.county',
                         'buildingImages',
                         'buildingListingUnits',
                         'buildingListingUnits.listingImages',
@@ -162,8 +191,69 @@ class SiteController extends Controller
 
         return view($this->activeTemplate . 'neighborhood.neighborhood_details', compact('pageTitle', 'neighborhood', 'totalImages', 'totalBuildings', 'breadcrumbs', 'totalListingImages', 'allNeighborhoods', 'sections'));
     }
+
+    public function neighborhoodBuildings(Request $request, Neighborhood $neighborhood)
+    {
+        if (!$request->ajax()) {
+            abort(404);
+        }
+
+        $q = $request->query('q'); // Search parameter
+        $limit = (int) $request->query('limit', 6);
+        $limit = max(1, min($limit, 9));
+
+        $query = $neighborhood->buildings()
+            ->where('status', 1)
+            ->with([
+                'neighborhood.county',
+                'buildingImages',
+                'buildingListingUnits',
+                'buildingListingUnits.listingImages',
+            ]);
+            
+        // If search parameter is provided, filter and return all results (ignore limit)
+        if ($q) {
+            $items = $query->where(function($query) use ($q) {
+                $query->where('name', 'LIKE', "%{$q}%")
+                      ->orWhere('address', 'LIKE', "%{$q}%");
+            })
+            ->orderBy('name', 'asc')
+            ->get();
+        } else {
+            // Normal pagination with limit
+            $items = $query->orderBy('name', 'asc')
+                          ->take($limit)
+                          ->get();
+        }
+
+        return response()->json($items);
+    }
     public function condoBuilding()
     {
+        if (request()->ajax()) {
+            $q = request('q'); // Search parameter
+            $limit = request('limit', 6);
+            
+            $query = Building::with(['neighborhood', 'neighborhood.county', 'buildingImages', 'buildingListingUnits'])
+                ->where('status', 1);
+                
+            // If search parameter is provided, filter and return all results (ignore limit)
+            if ($q) {
+                $items = $query->where(function($query) use ($q) {
+                    $query->where('name', 'LIKE', "%{$q}%")
+                          ->orWhere('address', 'LIKE', "%{$q}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+            } else {
+                // Normal pagination with limit
+                $items = $query->orderBy('name', 'asc')
+                              ->take($limit)
+                              ->get();
+            }
+            
+            return response()->json($items);
+        }
 
         $pageTitle = 'Condo Building';
         $allNeighborhoods = Neighborhood::with([

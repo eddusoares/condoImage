@@ -43,8 +43,8 @@
             <div class="neigh-hero__breadcrumb">
                 <a href="{{ route('home') }}" class="breadcrumb-home">Home</a>
                 <span class="breadcrumb-pipe"></span>
-                <a href="{{ route('county', ['slug' => slug($building->neighborhood->county->name), 'id' => $building->neighborhood->county->id]) }}" class="breadcrumb-county">{{ $building->neighborhood->county->name }}</a>
-                <span class="breadcrumb-pipe"></span>
+                <!-- <a href="{{ route('county', ['slug' => slug($building->neighborhood->county->name), 'id' => $building->neighborhood->county->id]) }}" class="breadcrumb-county">{{ $building->neighborhood->county->name }}</a>
+                <span class="breadcrumb-pipe"></span> -->
                 <a href="{{ route('neighborhood.details', ['county' => slug($building->neighborhood->county->name), 'slug' => slug($building->neighborhood->name), 'id' => $building->neighborhood->id]) }}" class="breadcrumb-section">{{ $building->neighborhood->name }}</a>
                 <span class="breadcrumb-pipe"></span>
                 <span class="breadcrumb-current">{{ $building->name }}</span>

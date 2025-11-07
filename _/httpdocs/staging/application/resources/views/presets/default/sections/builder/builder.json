@@ -26,19 +26,89 @@
     "category":  {
                      "builder":  true,
                      "no_selection":  false,
-                     "name":  "Category Section",
+                     "name":  "List All Buildings (Home)",
+                     "pages": ["/"],
                      "content":  {
                                      "heading":  "text",
                                      "subheading":  "text",
                                      "show_meta":  "switch",
+                                    "show_more_button":  "switch",
+                                    "button_text":  "text",
+                                     "button_link":  "text"
+                                 }
+                 },
+    "list_all_buildings":  {
+                     "builder":  true,
+                     "no_selection":  false,
+                     "name":  "List All Buildings",
+                     "pages":  ["condo-building"],
+                     "content":  {
+                                     "heading":  "text",
+                                     "subheading":  "text",
+                                     "show_meta":  "switch",
+                                     "show_more_button":  "switch",
                                      "button_text":  "text",
                                      "button_link":  "text"
                                  }
                  },
+    "list_neighborhood_buildings":  {
+                           "builder":  true,
+                           "no_selection":  false,
+                           "name":  "List Neighborhood Buildings",
+                           "pages":  ["neighborhood-details"],
+                           "content":  {
+                                           "heading":  "text",
+                                           "subheading":  "text",
+                                           "show_meta":  "switch",
+                                           "show_more_button":  "switch",
+                                           "button_text":  "text",
+                                           "button_link":  "text"
+                                       }
+                       },
     "top_categories":  {
                            "builder":  true,
                            "no_selection":  false,
-                           "name":  "Top Categories",
+                           "name":  "Top Buildings (Home)",
+                           "pages": ["/"],
+                           "content":  {
+                                           "heading":  "text",
+                                           "subheading_primary":  "text",
+                                           "subheading_secondary":  "text",
+                                           "button_text":  "text",
+                                           "button_link":  "text"
+                                       }
+                       },
+    "top_categories_neighborhood":  {
+                           "builder":  true,
+                           "no_selection":  false,
+                           "name":  "Top Neighborhood",
+                           "pages":  ["neighborhood"],
+                           "content":  {
+                                           "heading":  "text",
+                                           "subheading_primary":  "text",
+                                           "subheading_secondary":  "text",
+                                           "button_text":  "text",
+                                           "button_link":  "text"
+                                       }
+                       },
+    "top_categories_buildings":  {
+                           "builder":  true,
+                           "no_selection":  false,
+                           "name":  "Top Buildings",
+                           "pages":  ["condo-building"],
+                           "content":  {
+                                           "heading":  "text",
+                                           "subheading_primary":  "text",
+                                           "subheading_secondary":  "text",
+                                           "button_text":  "text",
+                                           "button_link":  "text"
+                                       }
+                       },
+    "top_especific_neighborhoods_buildings":  {
+                           "builder":  true,
+                           "no_selection":  false,
+                           "name":  "Top Especific Neighborhoods Buildings",
+                           "pages":  ["neighborhood-details"],
                            "content":  {
                                            "heading":  "text",
                                            "subheading_primary":  "text",
@@ -165,11 +235,27 @@
     "neighborhood_gallery":  {
                                  "builder":  true,
                                  "no_selection":  false,
-                                 "name":  "Neighborhood Gallery",
+                                 "name":  "List All Neighborhood (Home)",
+                                 "pages":  ["/"],
                                  "content":  {
                                                  "heading":  "text",
                                                  "subheading":  "text",
                                                  "show_meta":  "switch",
+                                                 "show_more_button":  "switch",
+                                                 "button_text":  "text",
+                                                 "button_link":  "text"
+                                             }
+                             },
+    "list_all_neighborhood":  {
+                                 "builder":  true,
+                                 "no_selection":  false,
+                                 "name":  "List All Neighborhood",
+                                 "pages":  ["neighborhood"],
+                                 "content":  {
+                                                 "heading":  "text",
+                                                 "subheading":  "text",
+                                                 "show_meta":  "switch",
+                                                 "show_more_button":  "switch",
                                                  "button_text":  "text",
                                                  "button_link":  "text"
                                              }

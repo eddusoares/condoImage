@@ -18,6 +18,20 @@
     $allBuildings = App\Models\Building::with('neighborhood.county')->where('status', 1)->inRandomOrder()->take(30)->get();
     $splitBuildings = $allBuildings->values()->chunk(ceil($allBuildings->count() / 2));
 
+    // Combined search items for suggestions
+    $searchItems = collect();
+    $searchItems = $searchItems->merge($allBuildings->map(fn($b) => [
+        'type' => 'building',
+        'name' => $b->name,
+        'url' => route('condo.building.details', building_route_params($b)),
+    ]));
+    $searchItems = $searchItems->merge($allNeighborhoods->map(fn($n) => [
+        'type' => 'neighborhood',
+        'name' => $n->name,
+        'url' => route('neighborhood.details', ['county' => slug($n->county->name), 'slug' => slug($n->name), 'id' => $n->id]),
+    ]));
+    $searchItems = $searchItems->shuffle(); // Randomize the combined list
+
     $wishlist = App\Models\Wishlist::where('user_id', auth()->id())->get();
 @endphp
 
@@ -128,7 +142,7 @@
                         <div class="navbar-search__card">
                             <form action="{{ route('search.building') }}" method="GET" class="navbar-search__field">
                                 <i class="fas fa-search"></i>
-                                <input id="navbarSearchInput" name="search" type="text"
+                                <input id="navbarSearchInput" name="search" type="text" data-building-search
                                     placeholder="Search buildings and neighborhoods" autocomplete="off">
                                 <button class="navbar-search__close" id="navbarSearchClose" type="button"
                                     aria-label="Close search">
@@ -138,12 +152,15 @@
 
                             <div class="navbar-search__suggestions">
                                 <p class="navbar-search__headline">Suggested Searches</p>
-                                <ul>
+                                <ul id="building-suggestions">
                                     @foreach($allBuildings->take(4) as $building)
                                         <li><a href="{{ route('condo.building.details', building_route_params($building)) }}"><i class="las la-arrow-right"></i> Explore {{ $building->name }}</a></li>
                                     @endforeach
                                 </ul>
                             </div>
+                            <script id="buildings-data" type="application/json">
+{!! json_encode($searchItems->values(), JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}
+</script>
                         </div>
                     </div>
                 </div>
@@ -217,12 +234,12 @@
             <form action="{{ route('search.building') }}" method="GET" class="mobile-search-form">
                 <div class="mobile-search-field">
                     <i class="fas fa-search"></i>
-                    <input name="search" type="text" placeholder="Search buildings and neighborhoods" autocomplete="off">
+                    <input name="search" type="text" data-building-search placeholder="Search buildings and neighborhoods" autocomplete="off">
                 </div>
             </form>
             <div class="mobile-search-suggestions">
                 <p class="mobile-search-headline">Suggested Searches</p>
-                <ul class="mobile-suggestions-list">
+                <ul class="mobile-suggestions-list" id="mobile-building-suggestions">
                     @foreach($allBuildings->take(4) as $building)
                         <li>
                             <a href="{{ route('condo.building.details', building_route_params($building)) }}">
@@ -623,6 +640,98 @@
             });
         });
     </script>
+    <script>
+(function () {
+  const MAX_ITEMS = 4;
+
+  // ------ Helpers
+  const normalize = (s) =>
+    (s || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+
+  const debounce = (fn, ms) => {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), ms);
+    };
+  };
+
+  // ------ Init quando DOM estiver pronto (ordem de execução segura)
+  document.addEventListener('DOMContentLoaded', function () {
+    const dataTag = document.getElementById('buildings-data');
+    const inputs = document.querySelectorAll('[data-building-search]');
+
+    if (!dataTag || inputs.length === 0) return; // não quebra layout
+
+    /** Carrega todos os itens (na ordem recebida do backend) */
+    let items = [];
+    try {
+      items = JSON.parse(dataTag.textContent || '[]');
+    } catch (e) {
+      items = [];
+    }
+
+    // Preprocess: acrescenta campo normalizado para busca
+    items = items.map(it => ({
+      ...it,
+      _n: normalize(it.name)
+    }));
+
+    const escapeHtml = (str) => {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    // Para cada input, encontrar o ul mais próximo (desktop ou mobile)
+    inputs.forEach(input => {
+      const container = input.closest('.navbar-search__card') || input.closest('.mobile-menu-content');
+      const suggestionsUl = container ? container.querySelector('ul[id*="building-suggestions"]') : null;
+
+      if (!suggestionsUl) return;
+
+      /** Renderiza até MAX_ITEMS mantendo o design atual */
+      const render = (list) => {
+        const slice = list.slice(0, MAX_ITEMS);
+        // Monta exatamente a mesma estrutura/estilos usados no Blade
+        suggestionsUl.innerHTML = slice.map(it => (
+          `<li>
+             <a href="${it.url}">
+               <i class="las la-arrow-right"></i> Explore ${escapeHtml(it.name)}
+             </a>
+           </li>`
+        )).join('');
+      };
+
+      /** Busca com filtro simples por substring (com acento-agnóstico) */
+      const performFilter = () => {
+        const q = normalize(input.value);
+        if (!q) {
+          // Sem termo: volta aos primeiros MAX_ITEMS, preservando a ordem do backend
+          render(items);
+          return;
+        }
+        const filtered = items.filter(it => it._n.includes(q));
+        render(filtered);
+      };
+
+      // Estado inicial (mesmo take(4) de antes)
+      render(items);
+
+      // Live search (sem mudar design, só conteúdo)
+      const onInput = debounce(performFilter, 100);
+      input.addEventListener('input', onInput);
+    });
+  });
+})();
+</script>
 @endpush
 
 <!-- Mobile Menu Script -->

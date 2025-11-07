@@ -29,6 +29,12 @@
         ? (bool) $showMeta
         : (isset($categoryValues->show_meta) ? (bool) $categoryValues->show_meta : false);
 
+    $resolvedShowMoreButton = isset($showMoreButton)
+        ? (bool) $showMoreButton
+        : (isset($categoryValues->show_more_button) ? (bool) $categoryValues->show_more_button : false);
+
+    $loadMoreEndpoint = $type === 'buildings' ? route('condo.building') : route('neighborhood');
+
     $listingConfig = [
         'type' => $type,
         'heading' => $heading,
@@ -39,6 +45,13 @@
         'items' => isset($items) ? $items : ($buildingsData ?? null),
         'limit' => isset($categoryValues->limit) ? (int) $categoryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
+        'show_more_button' => $resolvedShowMoreButton,
+        'load_more' => $resolvedShowMoreButton ? [
+            'endpoint' => $loadMoreEndpoint,
+            'params' => (object) [],
+            'increment' => 3,
+            'max_limit' => 50,
+        ] : null,
     ];
 @endphp
 

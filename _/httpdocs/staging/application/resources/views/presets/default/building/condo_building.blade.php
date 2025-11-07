@@ -61,27 +61,32 @@
     @endif
 
     @if (isset($sections) && $sections && $sections->secs)
-        @foreach (json_decode($sections->secs) as $sec)
-            @include($activeTemplate . 'sections.' . $sec)
+        @foreach (json_decode($sections->secs) as $sectionIndex => $sec)
+            <div id="{{ $sec }}" data-section="{{ $sec }}" data-index="{{ $sectionIndex + 1 }}">
+                @include($activeTemplate . 'sections.' . $sec)
+            </div>
         @endforeach
     @else
-        <div class="neigh-page">
+        <div id="category" data-section="category" data-index="1" class="neigh-page">
             <!-- All Buildings -->
             @include($activeTemplate . 'sections.category', [
-                'type' => 'neighborhoods',
+                'type' => 'buildings',
                 'showMeta' => true,
-                'items' => $allNeighborhoods,
-                'defaultTitle' => 'All neighborhoods',
-                'defaultButtonText' => 'Explore all neighborhoods',
-                'defaultButtonLink' => route('neighborhood'),
+                'defaultTitle' => 'All condo buildings',
+                'defaultButtonText' => 'Explore all buildings',
+                'defaultButtonLink' => route('condo.building'),
             ])
         </div>
 
         <!-- How it works -->
-        @include('presets.default.sections.work_process')
+        <div id="work_process" data-section="work_process" data-index="2">
+            @include('presets.default.sections.work_process')
+        </div>
 
         <!-- Visual compilation CTA -->
-        @include('presets.default.sections.visual_compilation')
+        <div id="visual_compilation" data-section="visual_compilation" data-index="3">
+            @include('presets.default.sections.visual_compilation')
+        </div>
     @endif
 
 @endsection
@@ -119,6 +124,96 @@
                 const index = evt.to ?? Array.from(slides).indexOf(carouselEl.querySelector('.carousel-item.active'));
                 applyFromSlide(index);
             });
+        });
+    </script>
+
+    <!-- Section Anchor Navigation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Section anchor navigation system
+            function findSectionByHash(hash) {
+                if (!hash) return null;
+                
+                // Remove # and normalize
+                const target = hash.substring(1).trim().toLowerCase();
+                if (!target) return null;
+                
+                // Priority 1: Try exact section name match
+                let element = document.getElementById(target);
+                if (element) return element;
+                
+                // Priority 2: Try data-section attribute match
+                element = document.querySelector(`[data-section="${target}"]`);
+                if (element) return element;
+                
+                // Priority 3: If it's a number, try section-{number} format
+                if (/^\d+$/.test(target)) {
+                    element = document.getElementById(`section-${target}`);
+                    if (element) return element;
+                    
+                    // Try by data-index
+                    element = document.querySelector(`[data-index="${target}"]`);
+                    if (element) return element;
+                }
+                
+                return null;
+            }
+            
+            function scrollToSection(element) {
+                if (!element) return;
+                
+                // Calculate header offset (adjust as needed)
+                const headerHeight = 80;
+                const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
+                const offsetTop = elementTop - headerHeight;
+                
+                // Smooth scroll to section
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+                
+                // Add highlight effect
+                // element.style.transition = 'box-shadow 0.3s ease';
+                // element.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.3)';
+                
+                // setTimeout(() => {
+                //     element.style.boxShadow = '';
+                // }, 2000);
+            }
+            
+            function handleAnchorNavigation() {
+                const hash = window.location.hash;
+                if (hash) {
+                    // Wait for potential dynamic content
+                    let attempts = 0;
+                    const maxAttempts = 20; // 2 seconds max
+                    
+                    function tryScroll() {
+                        const element = findSectionByHash(hash);
+                        if (element) {
+                            scrollToSection(element);
+                            return;
+                        }
+                        
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            setTimeout(tryScroll, 100);
+                        }
+                    }
+                    
+                    tryScroll();
+                }
+            }
+            
+            // Handle initial load
+            handleAnchorNavigation();
+            
+            // Handle hash changes
+            window.addEventListener('hashchange', handleAnchorNavigation);
+            
+            // Handle dynamic content loading
+            document.addEventListener('contentLoaded', handleAnchorNavigation);
         });
     </script>
 @endpush

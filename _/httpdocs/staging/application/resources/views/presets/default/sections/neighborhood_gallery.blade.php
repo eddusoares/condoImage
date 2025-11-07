@@ -24,6 +24,10 @@
         ? (bool) $showMeta
         : (isset($galleryValues->show_meta) ? (bool) $galleryValues->show_meta : false);
 
+    $resolvedShowMoreButton = isset($showMoreButton)
+        ? (bool) $showMoreButton
+        : (isset($galleryValues->show_more_button) ? (bool) $galleryValues->show_more_button : false);
+
     $listingConfig = [
         'type' => 'neighborhoods',
         'heading' => $heading,
@@ -34,6 +38,7 @@
         'items' => $neighs ?? null,
         'limit' => isset($galleryValues->limit) ? (int) $galleryValues->limit : null,
         'search_action' => $searchAction ?? $defaultSearchAction,
+        'show_more_button' => $resolvedShowMoreButton,
     ];
 @endphp
 
