@@ -24,7 +24,7 @@
                     <h2 class="tc-title"><?php echo e(__($tc->data_values->heading ?? 'Stand out with better visuals')); ?></h2>
                     <p class="tc-subtitle"><?php echo e(__($tc->data_values->subheading_primary ?? 'Discover premium images crafted for real estate professionals. From drone shots to interiors and floor plans — all organized by building and neighborhood.')); ?></p>
                     <p class="tc-subtitle-secondary mb-4"><?php echo e(__($tc->data_values->subheading_secondary ?? 'Stand out from the competition with stunning, ready-to-use visuals.')); ?></p>
-                    <a href="<?php echo e($tc->data_values->button_link ?? route('condo.building')); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all buildings')); ?></a>
+                    <a href="<?php echo e($tc->data_values->button_link ?? '#'); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all buildings')); ?></a>
                 </div>
                 
                 <!-- Controles para desktop - dentro da primeira coluna -->

@@ -96,7 +96,8 @@ class SiteController extends Controller
     {
         if (request()->ajax()) {
             $q = request('q'); // Search parameter
-            $limit = request('limit', 6);
+            $limit = max(1, (int) request('limit', 6));
+            $offset = max(0, (int) request('offset', 0));
             
             $query = Neighborhood::with([
                 'county',
@@ -111,13 +112,14 @@ class SiteController extends Controller
             // If search parameter is provided, filter and return all results (ignore limit)
             if ($q) {
                 $items = $query->where('name', 'LIKE', "%{$q}%")
-                ->orderBy('name', 'asc')
-                ->get();
+                    ->orderBy('name', 'asc')
+                    ->get();
             } else {
-                // Normal pagination with limit
+                // Normal pagination with limit/offset
                 $items = $query->orderBy('name', 'asc')
-                              ->take($limit)
-                              ->get();
+                    ->skip($offset)
+                    ->take($limit)
+                    ->get();
             }
             
             return response()->json($items);
@@ -159,6 +161,7 @@ class SiteController extends Controller
             'county',
             'buildings' => function ($query) {
                 $query->where('status', 1)
+                    ->orderBy('name', 'asc')
                     ->with([
                         'neighborhood.county',
                         'buildingImages',
@@ -199,8 +202,9 @@ class SiteController extends Controller
         }
 
         $q = $request->query('q'); // Search parameter
-        $limit = (int) $request->query('limit', 6);
-        $limit = max(1, min($limit, 9));
+    $limit = (int) $request->query('limit', 6);
+    $limit = max(1, min($limit, 9));
+    $offset = max(0, (int) $request->query('offset', 0));
 
         $query = $neighborhood->buildings()
             ->where('status', 1)
@@ -214,16 +218,17 @@ class SiteController extends Controller
         // If search parameter is provided, filter and return all results (ignore limit)
         if ($q) {
             $items = $query->where(function($query) use ($q) {
-                $query->where('name', 'LIKE', "%{$q}%")
-                      ->orWhere('address', 'LIKE', "%{$q}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();
+                    $query->where('name', 'LIKE', "%{$q}%")
+                          ->orWhere('address', 'LIKE', "%{$q}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
         } else {
-            // Normal pagination with limit
+            // Normal pagination with limit/offset
             $items = $query->orderBy('name', 'asc')
-                          ->take($limit)
-                          ->get();
+                ->skip($offset)
+                ->take($limit)
+                ->get();
         }
 
         return response()->json($items);
@@ -232,7 +237,8 @@ class SiteController extends Controller
     {
         if (request()->ajax()) {
             $q = request('q'); // Search parameter
-            $limit = request('limit', 6);
+            $limit = max(1, (int) request('limit', 6));
+            $offset = max(0, (int) request('offset', 0));
             
             $query = Building::with(['neighborhood', 'neighborhood.county', 'buildingImages', 'buildingListingUnits'])
                 ->where('status', 1);
@@ -240,16 +246,17 @@ class SiteController extends Controller
             // If search parameter is provided, filter and return all results (ignore limit)
             if ($q) {
                 $items = $query->where(function($query) use ($q) {
-                    $query->where('name', 'LIKE', "%{$q}%")
-                          ->orWhere('address', 'LIKE', "%{$q}%");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
+                        $query->where('name', 'LIKE', "%{$q}%")
+                              ->orWhere('address', 'LIKE', "%{$q}%");
+                    })
+                    ->orderBy('name', 'asc')
+                    ->get();
             } else {
-                // Normal pagination with limit
+                // Normal pagination with limit/offset
                 $items = $query->orderBy('name', 'asc')
-                              ->take($limit)
-                              ->get();
+                    ->skip($offset)
+                    ->take($limit)
+                    ->get();
             }
             
             return response()->json($items);

@@ -30,6 +30,35 @@ Route::namespace('Api')->name('api.')->group(function(){
         ]);
     });
 
+    Route::get('neighborhoods/search', function(){
+        $q = request('q', '');
+        $limit = request('limit', 6);
+        
+        $query = \App\Models\Neighborhood::where('status', 1)
+            ->with('county');
+            
+        if ($q) {
+            $query->where('name', 'LIKE', "%{$q}%");
+        }
+        
+        $neighborhoods = $query->orderBy('name', 'asc')
+            ->take($limit)
+            ->get();
+            
+        return response()->json([
+            'status' => 'success',
+            'data' => $neighborhoods
+        ]);
+    });
+
+    Route::get('buildings', function(){
+        $buildings = App\Models\Building::all();
+        return response()->json([
+            'status' => 'success',
+            'data' => $buildings
+        ]);
+    });
+
     Route::get('get-countries',function(){
         $c = json_decode(file_get_contents(resource_path('views/includes/country.json')));
         $notify[] = 'General setting data';

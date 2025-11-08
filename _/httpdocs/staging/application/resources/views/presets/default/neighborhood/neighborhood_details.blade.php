@@ -181,28 +181,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // }, 2000);
     }
     
+    function navigateToHash(hash) {
+        if (!hash) return;
+        let attempts = 0;
+        const maxAttempts = 20;
+        function tryScroll() {
+            const element = findSectionByHash(hash);
+            if (element) {
+                scrollToSection(element);
+                return;
+            }
+            attempts++;
+            if (attempts < maxAttempts) setTimeout(tryScroll, 100);
+        }
+        tryScroll();
+    }
+
     function handleAnchorNavigation() {
         const hash = window.location.hash;
-        if (hash) {
-            // Wait for potential dynamic content
-            let attempts = 0;
-            const maxAttempts = 20; // 2 seconds max
-            
-            function tryScroll() {
-                const element = findSectionByHash(hash);
-                if (element) {
-                    scrollToSection(element);
-                    return;
-                }
-                
-                attempts++;
-                if (attempts < maxAttempts) {
-                    setTimeout(tryScroll, 100);
-                }
-            }
-            
-            tryScroll();
-        }
+        if (hash) navigateToHash(hash);
     }
     
     // Handle initial load
@@ -213,6 +210,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle dynamic content loading
     document.addEventListener('contentLoaded', handleAnchorNavigation);
+
+    // Reprocess clicks on same-hash links
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href*="#"]');
+        if (!link) return;
+        const url = new URL(link.getAttribute('href'), window.location.origin);
+        if (url.pathname !== window.location.pathname) return;
+        if (!url.hash) return;
+        if (url.hash === window.location.hash) {
+            e.preventDefault();
+            navigateToHash(url.hash);
+        }
+    });
 });
 </script>
 @endpush

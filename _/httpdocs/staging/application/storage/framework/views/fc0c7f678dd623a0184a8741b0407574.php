@@ -40,6 +40,12 @@
         'search_action' => $searchAction ?? $defaultSearchAction,
         'show_more_button' => $resolvedShowMoreButton,
         'section_id' => 'neighborhood_gallery_page', // Unique ID for gallery section
+        'load_more' => $resolvedShowMoreButton ? [
+            'endpoint' => route('neighborhood'),
+            'params' => (object) [],
+            'increment' => 3,
+            'max_limit' => isset($galleryValues->max_limit) ? (int) $galleryValues->max_limit : 50,
+        ] : null,
     ];
 ?>
 

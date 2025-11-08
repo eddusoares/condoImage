@@ -6,6 +6,43 @@
         ->latest()
         ->take(10)
         ->get();
+
+    // Prepare banner search dataset early to avoid scope issues
+    try {
+        $bannerBuildings = App\Models\Building::with('neighborhood.county')
+            ->where('status', 1)
+            ->inRandomOrder()
+            ->take(40)
+            ->get();
+        $bannerNeighborhoods = App\Models\Neighborhood::with('county')
+            ->where('status', 1)
+            ->inRandomOrder()
+            ->take(40)
+            ->get();
+        $bannerSearchItems = collect()
+            ->merge($bannerBuildings->map(fn($b) => [
+                'type' => 'building',
+                'name' => $b->name,
+                'url' => route('condo.building.details', building_route_params($b)),
+            ]))
+            ->merge($bannerNeighborhoods->map(fn($n) => [
+                'type' => 'neighborhood',
+                'name' => $n->name,
+                'url' => route('neighborhood.details', [
+                    'county' => slug(optional($n->county)->name ?? ''),
+                    'slug' => slug($n->name),
+                    'id' => $n->id,
+                ]),
+            ]))
+            ->shuffle()
+            ->values();
+    } catch (\Throwable $e) {
+        // Fallback to empty array on failure (avoid breaking the view)
+        $bannerSearchItems = collect();
+        if (config('app.debug')) {
+            // Log can be added here if needed: \Log::warning('Banner search dataset error: '.$e->getMessage());
+        }
+    }
 @endphp
 <!--========================== Banner Section Start ==========================-->
 @if ($general->theme == 1)
@@ -91,11 +128,26 @@
             </div>
 
             <div class="hero-search">
-                <form id="myForm" class="hero-search__form" action="{{ route('search.building') }}" method="GET">
+                <form id="myForm" class="hero-search__form" action="{{ route('search.building') }}" method="GET" autocomplete="off">
                     <span class="hero-search__icon"><i class="fas fa-search"></i></span>
                     <input id="searchInput" type="text" name="search" class="form--control hero-search__input"
-                        value="{{ old('search') }}" placeholder="Search for building">
+                        value="{{ old('search') }}" placeholder="Search for building" aria-autocomplete="list" aria-expanded="false" aria-owns="bannerSearchResults">
                 </form>
+                <!-- Result panel (new implementation) -->
+                <div id="bannerSearchResults" class="navbar-search__panel is-static" aria-hidden="true">
+                    <div class="navbar-search__card hero-search__card">
+                        <div class="navbar-search__suggestions" data-role="suggestions">
+                            <p class="navbar-search__headline" data-role="headline">Suggested Searches</p>
+                            <ul class="navbar-search__list" id="bannerSuggestionsList"></ul>
+                        </div>
+                        <template id="bannerItemTemplate">
+                            <li class="banner-search-item"><a href="#" data-role="item-link"><i class="las la-arrow-right"></i> <span class="txt" data-role="item-text"></span></a></li>
+                        </template>
+                        <div class="navbar-search__empty d-none" data-role="empty">No results found</div>
+                        <div class="navbar-search__loading d-none" data-role="loading"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...</div>
+                        <div class="navbar-search__error d-none" data-role="error">Error loading results</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -166,52 +218,345 @@
 </section> -->
 
 @push('script')
-    @push('script')
-        <script>
-            $(document).ready(function () {
-                'use strict';
-                $('#searchInput').keypress(function (e) {
-                    if (e.which === 13) {
-                        e.preventDefault();
-                        $('#myForm').submit();
-                    }
-                });
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const carouselEl = document.querySelector('#heroCarousel');
+    if (!carouselEl) return;
+
+    // Garante instância do Bootstrap Carousel
+    const bsCarousel = bootstrap.Carousel.getOrCreateInstance(carouselEl);
+
+    const indicators = Array.from(document.querySelectorAll('#heroIndicators button'));
+    const slides = carouselEl.querySelectorAll('.carousel-item');
+    const lastIndex = Math.max(0, slides.length - 1);
+
+    function setActiveByIndex(index) {
+        const activeDot = index % 4; // 4 pontos fixos
+        indicators.forEach((btn, i) => {
+            const isActive = i === activeDot;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+    }
+
+    // Atualiza os dots a cada slide
+    carouselEl.addEventListener('slid.bs.carousel', function (evt) {
+        const active = carouselEl.querySelector('.carousel-item.active');
+        const index = evt.to ?? Array.from(slides).indexOf(active);
+        setActiveByIndex(index);
+    });
+
+    // Clique nos 4 dots vai para o "grupo" correspondente
+    indicators.forEach((btn, i) => {
+        btn.addEventListener('click', function () {
+            const active = carouselEl.querySelector('.carousel-item.active');
+            const currentIndex = Array.from(slides).indexOf(active);
+            const groupStart = currentIndex - (currentIndex % 4);
+            const target = Math.min(groupStart + i, lastIndex);
+            bsCarousel.to(target);
+        });
+    });
+});
+</script>
+<script id="banner-search-data" type="application/json">{!! json_encode($bannerSearchItems ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}</script>
+<script>
+(function () {
+    'use strict';
+
+    const input = document.getElementById('searchInput');
+    const dataTag = document.getElementById('banner-search-data');
+    if (!input || !dataTag) {
+        return;
+    }
+
+    const heroSearch = input.closest('.hero-search');
+    if (!heroSearch) {
+        return;
+    }
+
+    const MAX_RESULTS = 8;
+    let panel = null;
+    let listNode = null;
+    let emptyNode = null;
+    let activeIndex = -1;
+    let currentResults = [];
+    let closingTimer = null;
+
+    const form = input.form;
+
+    const normalizeValue = (value) => (value || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    const dataset = (() => {
+        try {
+            const parsed = JSON.parse(dataTag.textContent || '[]');
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed.map((item) => ({
+                name: String(item?.name ?? ''),
+                url: String(item?.url ?? '#'),
+                normalized: normalizeValue(item?.name ?? ''),
+            }));
+        } catch (error) {
+            console.error('Banner search dataset error:', error);
+            return [];
+        }
+    })();
+
+    function createPanel() {
+        if (panel) {
+            clearTimeout(closingTimer);
+            return panel;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'navbar-search__panel hero-search__panel';
+        wrapper.setAttribute('role', 'listbox');
+        wrapper.setAttribute('aria-label', 'Sugestões da busca');
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateY(-6px)';
+        wrapper.style.transition = 'opacity 160ms ease, transform 160ms ease';
+
+        const card = document.createElement('div');
+        card.className = 'navbar-search__card hero-search__card';
+
+        const headline = document.createElement('p');
+        headline.className = 'navbar-search__headline';
+        headline.textContent = 'Sugestões';
+
+        const list = document.createElement('ul');
+        list.className = 'navbar-search__list';
+
+        const emptyState = document.createElement('div');
+        emptyState.className = 'navbar-search__empty';
+        emptyState.textContent = 'Nenhum resultado encontrado';
+        emptyState.hidden = true;
+
+        card.appendChild(headline);
+        card.appendChild(list);
+        card.appendChild(emptyState);
+        wrapper.appendChild(card);
+        heroSearch.appendChild(wrapper);
+
+        // Fade-in to make the panel appear smoothly.
+        requestAnimationFrame(() => {
+            wrapper.style.opacity = '1';
+            wrapper.style.transform = 'translateY(0)';
+        });
+
+        panel = wrapper;
+        listNode = list;
+        emptyNode = emptyState;
+        return panel;
+    }
+
+    function destroyPanel(immediate = false) {
+        if (!panel) {
+            return;
+        }
+
+        const target = panel;
+        panel = null;
+        listNode = null;
+        emptyNode = null;
+        activeIndex = -1;
+        currentResults = [];
+        clearTimeout(closingTimer);
+
+        if (immediate) {
+            target.remove();
+            return;
+        }
+
+        target.style.opacity = '0';
+        target.style.transform = 'translateY(-6px)';
+        closingTimer = setTimeout(() => target.remove(), 160);
+    }
+
+    function setActiveIndex(index) {
+        if (!listNode) {
+            return;
+        }
+
+        const links = listNode.querySelectorAll('a[role="option"]');
+        if (!links.length) {
+            activeIndex = -1;
+            return;
+        }
+
+        activeIndex = index;
+        links.forEach((link, idx) => {
+            const isActive = idx === activeIndex;
+            link.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            link.style.backgroundColor = isActive ? 'rgba(0,0,0,0.04)' : '';
+        });
+    }
+
+    function scrollActiveIntoView() {
+        if (!listNode || activeIndex < 0) {
+            return;
+        }
+
+        const activeLink = listNode.querySelector(`a[role="option"][data-index="${activeIndex}"]`);
+        if (activeLink) {
+            activeLink.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function renderResults(matches) {
+        if (!panel || !listNode || !emptyNode) {
+            return;
+        }
+
+        listNode.innerHTML = '';
+        activeIndex = -1;
+
+        if (!matches.length) {
+            emptyNode.hidden = false;
+            return;
+        }
+
+        emptyNode.hidden = true;
+
+        const fragment = document.createDocumentFragment();
+        matches.forEach((item, index) => {
+            const li = document.createElement('li');
+
+            const link = document.createElement('a');
+            link.href = item.url;
+            link.setAttribute('role', 'option');
+            link.setAttribute('tabindex', '-1');
+            link.dataset.index = String(index);
+
+            const icon = document.createElement('i');
+            icon.className = 'las la-arrow-right';
+            icon.setAttribute('aria-hidden', 'true');
+
+            const text = document.createElement('span');
+            text.textContent = item.name;
+
+            link.appendChild(icon);
+            link.appendChild(text);
+
+            link.addEventListener('mousedown', (event) => event.preventDefault());
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                destroyPanel(true);
+                window.location.assign(item.url);
             });
+            link.addEventListener('mouseenter', () => setActiveIndex(index));
 
-            // Indicators: 4 dots fixed, active cycles modulo 4
-            document.addEventListener('DOMContentLoaded', function () {
-                const carouselEl = document.querySelector('#heroCarousel');
-                if (!carouselEl) return;
-                const bsCarousel = bootstrap.Carousel.getOrCreateInstance(carouselEl);
-                const indicators = Array.from(document.querySelectorAll('#heroIndicators button'));
-                const slides = carouselEl.querySelectorAll('.carousel-item');
-                const lastIndex = Math.max(0, slides.length - 1);
+            li.appendChild(link);
+            fragment.appendChild(li);
+        });
 
-                function setActiveByIndex(index) {
-                    const activeDot = index % 4;
-                    indicators.forEach((btn, i) => {
-                        const isActive = i === activeDot;
-                        btn.classList.toggle('active', isActive);
-                        btn.setAttribute('aria-current', isActive ? 'true' : 'false');
-                    });
-                }
+        listNode.appendChild(fragment);
+    }
 
-                carouselEl.addEventListener('slid.bs.carousel', function (evt) {
-                    const index = evt.to ?? Array.from(slides).indexOf(carouselEl.querySelector('.carousel-item.active'));
-                    setActiveByIndex(index);
-                });
+    function getMatches(term) {
+        const trimmed = term.trim();
+        if (!trimmed) {
+            return dataset.slice(0, MAX_RESULTS);
+        }
+        const query = normalizeValue(trimmed);
+        return dataset.filter((item) => item.normalized.includes(query)).slice(0, MAX_RESULTS);
+    }
 
-                indicators.forEach((btn, i) => {
-                    btn.addEventListener('click', function () {
-                        const active = carouselEl.querySelector('.carousel-item.active');
-                        const currentIndex = Array.from(slides).indexOf(active);
-                        const groupStart = currentIndex - (currentIndex % 4);
-                        const target = Math.min(groupStart + i, lastIndex);
-                        bsCarousel.to(target);
-                    });
-                });
-            });
-        </script>
-    @endpush
+    function handleInput() {
+        const value = input.value;
+        const trimmed = value.trim();
+
+        if (!trimmed) {
+            destroyPanel();
+            return;
+        }
+
+        currentResults = getMatches(trimmed);
+        createPanel();
+        renderResults(currentResults);
+        if (currentResults.length) {
+            setActiveIndex(0);
+            scrollActiveIntoView();
+        } else {
+            setActiveIndex(-1);
+        }
+    }
+
+    function handleFocus() {
+        const trimmed = input.value.trim();
+        if (!trimmed) {
+            return;
+        }
+        handleInput();
+    }
+
+    function handleKeyDown(event) {
+        if (!panel) {
+            return;
+        }
+
+        if (event.key === 'ArrowDown') {
+            if (!currentResults.length) {
+                return;
+            }
+            event.preventDefault();
+            const next = activeIndex < currentResults.length - 1 ? activeIndex + 1 : 0;
+            setActiveIndex(next);
+            scrollActiveIntoView();
+        } else if (event.key === 'ArrowUp') {
+            if (!currentResults.length) {
+                return;
+            }
+            event.preventDefault();
+            const prev = activeIndex > 0 ? activeIndex - 1 : currentResults.length - 1;
+            setActiveIndex(prev);
+            scrollActiveIntoView();
+        } else if (event.key === 'Enter') {
+            if (activeIndex >= 0 && currentResults[activeIndex]) {
+                event.preventDefault();
+                destroyPanel(true);
+                window.location.assign(currentResults[activeIndex].url);
+            }
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            destroyPanel();
+        }
+    }
+
+    function handleDocumentPointer(event) {
+        if (!panel) {
+            return;
+        }
+
+        if (event.target === input || panel.contains(event.target)) {
+            return;
+        }
+
+        destroyPanel();
+    }
+
+    input.addEventListener('input', handleInput);
+    input.addEventListener('focus', handleFocus);
+    input.addEventListener('keydown', handleKeyDown);
+
+    input.addEventListener('blur', () => {
+        // Delay lets click handlers inside the suggestion panel run first.
+        setTimeout(() => destroyPanel(), 120);
+    });
+
+    document.addEventListener('pointerdown', handleDocumentPointer);
+
+    if (form) {
+        form.addEventListener('submit', () => destroyPanel(true));
+    }
+
+    window.addEventListener('blur', () => destroyPanel());
+    window.addEventListener('resize', () => destroyPanel(true));
+})();
+</script>
 @endpush
 

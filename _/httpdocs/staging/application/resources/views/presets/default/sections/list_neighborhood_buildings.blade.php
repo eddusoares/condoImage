@@ -46,13 +46,9 @@
 
 	$filteredItems = $itemsCollection->filter(function ($building) {
 		return $building && (int) ($building->status ?? 0) === 1;
-	});
+	})->values();
 
-	$sortedItems = $filteredItems->sortBy(function ($building) {
-		return $building->name ?? '';
-	}, SORT_NATURAL | SORT_FLAG_CASE);
-
-	$initialItems = $sortedItems->take($initialLimit)->values();
+	$initialItems = $filteredItems->take($initialLimit);
 
 	$loadMoreEndpoint = $activeNeighborhood
 		? route('neighborhood.buildings', ['neighborhood' => $activeNeighborhood->id])

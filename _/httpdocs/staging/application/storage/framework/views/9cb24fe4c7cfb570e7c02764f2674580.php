@@ -126,38 +126,33 @@
                     top: offsetTop,
                     behavior: 'smooth'
                 });
-                
-                // // Add highlight effect
-                // element.style.transition = 'box-shadow 0.3s ease';
-                // element.style.boxShadow = '0 0 20px rgba(0, 123, 255, 0.3)';
-                
-                // setTimeout(() => {
-                //     element.style.boxShadow = '';
-                // }, 2000);
             }
             
+            function navigateToHash(hash) {
+                if (!hash) return;
+                // Wait for potential dynamic content
+                let attempts = 0;
+                const maxAttempts = 20; // 2 seconds max
+
+                function tryScroll() {
+                    const element = findSectionByHash(hash);
+                    if (element) {
+                        scrollToSection(element);
+                        return;
+                    }
+
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(tryScroll, 100);
+                    }
+                }
+
+                tryScroll();
+            }
+
             function handleAnchorNavigation() {
                 const hash = window.location.hash;
-                if (hash) {
-                    // Wait for potential dynamic content
-                    let attempts = 0;
-                    const maxAttempts = 20; // 2 seconds max
-                    
-                    function tryScroll() {
-                        const element = findSectionByHash(hash);
-                        if (element) {
-                            scrollToSection(element);
-                            return;
-                        }
-                        
-                        attempts++;
-                        if (attempts < maxAttempts) {
-                            setTimeout(tryScroll, 100);
-                        }
-                    }
-                    
-                    tryScroll();
-                }
+                if (hash) navigateToHash(hash);
             }
             
             // Handle initial load
@@ -168,6 +163,19 @@
             
             // Handle dynamic content loading
             document.addEventListener('contentLoaded', handleAnchorNavigation);
+
+            // Reprocess clicks on same-hash links (smooth re-scroll)
+            document.addEventListener('click', function (e) {
+                const link = e.target.closest('a[href*="#"]');
+                if (!link) return;
+                const url = new URL(link.getAttribute('href'), window.location.origin);
+                if (url.pathname !== window.location.pathname) return; // only same-page hashes
+                if (!url.hash) return;
+                if (url.hash === window.location.hash) {
+                    e.preventDefault();
+                    navigateToHash(url.hash);
+                }
+            });
         });
     </script>
 <?php $__env->stopPush(); ?>

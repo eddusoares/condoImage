@@ -69,25 +69,33 @@
     <?php endif; ?>
 
     <?php if(isset($sections) && $sections && $sections->secs): ?>
-        <?php $__currentLoopData = json_decode($sections->secs); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sec): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <?php echo $__env->make($activeTemplate . 'sections.' . $sec, \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <?php $__currentLoopData = json_decode($sections->secs); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sectionIndex => $sec): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <div id="<?php echo e($sec); ?>" data-section="<?php echo e($sec); ?>" data-index="<?php echo e($sectionIndex + 1); ?>">
+                <?php echo $__env->make($activeTemplate . 'sections.' . $sec, \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            </div>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     <?php else: ?>
         <div class="neigh-page">
             <!-- All Neighborhoods -->
-            <?php echo $__env->make('presets.default.sections.neighborhood_gallery', [
-                'showMeta' => true,
-                'defaultTitle' => 'All Neighborhoods',
-                'defaultButtonText' => 'Explore all neighborhoods',
-                'defaultButtonLink' => route('neighborhood'),
-            ], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            <div id="neighborhood_gallery" data-section="neighborhood_gallery" data-index="1">
+                <?php echo $__env->make('presets.default.sections.neighborhood_gallery', [
+                    'showMeta' => true,
+                    'defaultTitle' => 'All Neighborhoods',
+                    'defaultButtonText' => 'Explore all neighborhoods',
+                    'defaultButtonLink' => route('neighborhood'),
+                ], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            </div>
         </div>
 
         <!-- How it works -->
-        <?php echo $__env->make('presets.default.sections.work_process', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <div id="work_process" data-section="work_process" data-index="2">
+            <?php echo $__env->make('presets.default.sections.work_process', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        </div>
 
         <!-- Visual compilation CTA -->
-        <?php echo $__env->make('presets.default.sections.visual_compilation', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <div id="visual_compilation" data-section="visual_compilation" data-index="3">
+            <?php echo $__env->make('presets.default.sections.visual_compilation', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        </div>
     <?php endif; ?>
 
 <?php $__env->stopSection(); ?>
@@ -131,6 +139,103 @@
             });
         });
     </script>
+
+        <!-- Section Anchor Navigation Script -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Section anchor navigation system (parity with other pages)
+            function findSectionByHash(hash) {
+                if (!hash) return null;
+
+                // Remove # and normalize
+                const target = hash.substring(1).trim().toLowerCase();
+                if (!target) return null;
+
+                // Priority 1: Try exact section name match
+                let element = document.getElementById(target);
+                if (element) return element;
+
+                // Priority 2: Try data-section attribute match
+                element = document.querySelector(`[data-section="${target}"]`);
+                if (element) return element;
+
+                // Priority 3: If it's a number, try section-{number} or data-index
+                if (/^\d+$/.test(target)) {
+                    element = document.getElementById(`section-${target}`);
+                    if (element) return element;
+
+                    // Try by data-index
+                    element = document.querySelector(`[data-index="${target}"]`);
+                    if (element) return element;
+                }
+
+                return null;
+            }
+
+            function scrollToSection(element) {
+                if (!element) return;
+
+                // Calculate header offset (consistent with other pages)
+                const headerHeight = 80;
+                const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
+                const offsetTop = elementTop - headerHeight;
+
+                // Smooth scroll to section
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+            }
+
+            function navigateToHash(hash) {
+                if (!hash) return;
+                let attempts = 0;
+                const maxAttempts = 20; // 2 seconds max
+
+                function tryScroll() {
+                    const element = findSectionByHash(hash);
+                    if (element) {
+                        scrollToSection(element);
+                        return;
+                    }
+
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(tryScroll, 100);
+                    }
+                }
+
+                tryScroll();
+            }
+
+            function handleAnchorNavigation() {
+                const hash = window.location.hash;
+                if (hash) navigateToHash(hash);
+            }
+
+            // Handle initial load
+            handleAnchorNavigation();
+
+            // Handle hash changes
+            window.addEventListener('hashchange', handleAnchorNavigation);
+
+            // Handle dynamic content loading
+            document.addEventListener('contentLoaded', handleAnchorNavigation);
+
+            // Reprocess clicks on same-hash links
+            document.addEventListener('click', function (e) {
+                const link = e.target.closest('a[href*="#"]');
+                if (!link) return;
+                const url = new URL(link.getAttribute('href'), window.location.origin);
+                if (url.pathname !== window.location.pathname) return;
+                if (!url.hash) return;
+                if (url.hash === window.location.hash) {
+                    e.preventDefault();
+                    navigateToHash(url.hash);
+                }
+            });
+        });
+        </script>
 <?php $__env->stopPush(); ?>
 
 
