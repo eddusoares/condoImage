@@ -23,12 +23,12 @@
             ->merge($bannerBuildings->map(fn($b) => [
                 'type' => 'building',
                 'name' => $b->name,
-                'url' => route('condo.building.details', building_route_params($b)),
+                'url' => baseRoute('condo.building.details', building_route_params($b)),
             ]))
             ->merge($bannerNeighborhoods->map(fn($n) => [
                 'type' => 'neighborhood',
                 'name' => $n->name,
-                'url' => route('neighborhood.details', [
+                'url' => baseRoute('neighborhood.details', [
                     'county' => slug(optional($n->county)->name ?? ''),
                     'slug' => slug($n->name),
                     'id' => $n->id,
@@ -128,7 +128,7 @@
             </div>
 
             <div class="hero-search">
-                <form id="myForm" class="hero-search__form" action="<?php echo e(route('search.building')); ?>" method="GET" autocomplete="off">
+                <form id="myForm" class="hero-search__form" action="<?php echo e(baseRoute('search.building')); ?>" method="GET" autocomplete="off">
                     <span class="hero-search__icon"><i class="fas fa-search"></i></span>
                     <input id="searchInput" type="text" name="search" class="form--control hero-search__input"
                         value="<?php echo e(old('search')); ?>" placeholder="Search for building" aria-autocomplete="list" aria-expanded="false" aria-owns="bannerSearchResults">

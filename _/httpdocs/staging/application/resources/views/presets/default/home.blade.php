@@ -20,7 +20,7 @@
 @push('script')
     <script>
         $(document).on('click', '.myGuestWishlistButton', function () {
-            window.location.href = "{{ route('user.login') }}";
+            window.location.href = "{{ baseRoute('user.login') }}";
         });
     </script>
 
@@ -57,7 +57,7 @@
                     }
 
                     if (data.auth == false) {
-                        window.location.href = "{{ route('user.login') }}";
+                        window.location.href = "{{ baseRoute('user.login') }}";
                     }
                 },
                 error: function (xhr, status, error) { },
@@ -79,7 +79,7 @@
     </script>
 
     <!-- Top Categories Carousel Script -->
-    <script src="{{ asset($activeTemplateTrue . 'js/simplified_carousel_script.js') }}"></script>
+    <script src="{{ baseAsset($activeTemplateTrue . 'js/simplified_carousel_script.js') }}"></script>
 
     <!-- Section Anchor Navigation Script -->
     <script>

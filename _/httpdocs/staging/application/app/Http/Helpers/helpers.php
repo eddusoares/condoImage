@@ -272,28 +272,56 @@ function getImage($image, $size = null)
 {
     $clean = '';
 
-    // Resolve against docroot (httpdocs/staging) because assets live outside Laravel's public_path
-    $candidate = $image;
-    if (!(is_file($candidate))) {
+    if (empty($image)) {
+        return $size ? baseRoute('placeholder.image', $size) : baseAsset('assets/images/general/default.png');
+    }
+
+    if (filter_var($image, FILTER_VALIDATE_URL)) {
+        return $image;
+    }
+
+    $relativePath = ltrim($image, '/\\');
+    $filesystemPath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
+    if ($filesystemPath === '') {
+        return $size ? baseRoute('placeholder.image', $size) : baseAsset('assets/images/general/default.png');
+    }
+
+    $candidatePaths = [];
+
+    try {
+        $docRoot = rtrim(dirname(base_path()), DIRECTORY_SEPARATOR); // application/.. => httpdocs/staging
+        $candidatePaths[] = $docRoot . DIRECTORY_SEPARATOR . $filesystemPath;
+    } catch (\Throwable $e) {
+        // ignore
+    }
+
+    try {
+        $candidatePaths[] = base_path(str_replace('\\', '/', $relativePath));
+    } catch (\Throwable $e) {
+        // ignore
+    }
+
+    if (function_exists('public_path')) {
         try {
-            $docRoot = rtrim(dirname(base_path()), DIRECTORY_SEPARATOR); // application/.. => httpdocs/staging
-            $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($image, '/\\'));
-            $altPath = $docRoot . DIRECTORY_SEPARATOR . $normalized;
-            if (is_file($altPath)) {
-                $candidate = $altPath;
-            }
+            $candidatePaths[] = public_path(str_replace('\\', '/', $relativePath));
         } catch (\Throwable $e) {
             // ignore
         }
     }
 
-    if (is_file($candidate)) {
-        return asset($image) . $clean;
+    foreach (array_filter(array_unique($candidatePaths)) as $candidate) {
+        if ($candidate === DIRECTORY_SEPARATOR) {
+            continue;
+        }
+        if (@is_file($candidate)) {
+            return baseAsset($image) . $clean;
+        }
     }
+
     if ($size) {
-        return route('placeholder.image', $size);
+        return baseRoute('placeholder.image', $size);
     }
-    return asset('assets/images/general/default.png');
+    return baseAsset('assets/images/general/default.png');
 }
 
 function notify($user, $templateName, $shortCodes = null, $sendVia = null, $createLog = true)
@@ -858,6 +886,142 @@ if (!function_exists('listing_unit_route_params')) {
             'unit' => slug($listingUnit->unit_number),
             'id' => $listingUnit->id,
         ];
+    }
+}
+
+if (!function_exists('baseUrl')) {
+    /**
+     * Generate URL with BASE_URL prefix support
+     * Works both for local (localhost) and production (with /staging/ prefix)
+     */
+    function baseUrl($path = '')
+    {
+        $baseUrl = env('BASE_URL');
+        if (empty($baseUrl)) {
+            // Se BASE_URL não estiver definida, usa a URL da aplicação normal
+            return url($path);
+        }
+
+        if (is_null($path)) {
+            $path = '';
+        }
+
+        $stringPath = (string) $path;
+
+        // Se já for uma URL completa, retorna como está
+        if (preg_match('#^https?://#i', $stringPath)) {
+            return $stringPath;
+        }
+
+        $cleanBaseUrl = rtrim($baseUrl, '/');
+        $cleanPath = ltrim($stringPath, '/');
+
+        // Separa query string e fragmentos para tratarmos apenas o path
+        $fragment = '';
+        if (($hashPos = strpos($cleanPath, '#')) !== false) {
+            $fragment = substr($cleanPath, $hashPos);
+            $cleanPath = substr($cleanPath, 0, $hashPos);
+        }
+
+        $query = '';
+        if (($queryPos = strpos($cleanPath, '?')) !== false) {
+            $query = substr($cleanPath, $queryPos);
+            $cleanPath = substr($cleanPath, 0, $queryPos);
+        }
+
+        // Remove prefixo duplicado (ex.: staging/staging)
+        $basePath = trim(parse_url($cleanBaseUrl, PHP_URL_PATH) ?? '', '/');
+        if ($basePath !== '') {
+            if ($cleanPath === $basePath) {
+                $cleanPath = '';
+            } elseif (strpos($cleanPath, $basePath . '/') === 0) {
+                $cleanPath = substr($cleanPath, strlen($basePath) + 1);
+            }
+        }
+
+        $rebuilt = $cleanBaseUrl . ($cleanPath !== '' ? '/' . $cleanPath : '');
+
+        return $rebuilt . $query . $fragment;
+    }
+}
+
+if (!function_exists('baseRoute')) {
+    /**
+     * Generate route URL with BASE_URL prefix support
+     */
+    function baseRoute($name, $parameters = [])
+    {
+        $baseUrl = env('BASE_URL');
+        if (empty($baseUrl)) {
+            // Se BASE_URL não estiver definida, usa route normal
+            return route($name, $parameters);
+        }
+
+        // Gera a rota relativa
+        $routeUrl = route($name, $parameters);
+        $parsedUrl = parse_url($routeUrl);
+        $path = $parsedUrl['path'] ?? '';
+        $query = isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '';
+        $fragment = isset($parsedUrl['fragment']) ? '#' . $parsedUrl['fragment'] : '';
+
+        // Remove o prefixo da APP_URL se presente
+        $appUrl = env('APP_URL', 'http://localhost');
+        $appParsedUrl = parse_url($appUrl);
+        $appPath = $appParsedUrl['path'] ?? '';
+        if ($appPath && strpos($path, $appPath) === 0) {
+            $path = substr($path, strlen($appPath));
+        }
+
+        // Remove prefixo duplicado diretamente aqui também
+        $basePath = trim(parse_url($baseUrl, PHP_URL_PATH) ?? '', '/');
+        $relativePath = ltrim($path, '/');
+        if ($basePath !== '') {
+            if ($relativePath === $basePath) {
+                $relativePath = '';
+            } elseif (strpos($relativePath, $basePath . '/') === 0) {
+                $relativePath = substr($relativePath, strlen($basePath) + 1);
+            }
+        }
+
+        return baseUrl($relativePath . $query . $fragment);
+    }
+}
+
+if (!function_exists('baseAsset')) {
+    /**
+     * Generate asset URL with BASE_URL prefix support
+     */
+    function baseAsset($path)
+    {
+        $baseUrl = env('BASE_URL');
+        if (empty($baseUrl)) {
+            // Se BASE_URL não estiver definida, usa asset normal
+            return asset($path);
+        }
+
+        if (is_null($path)) {
+            $path = '';
+        }
+
+        $stringPath = (string) $path;
+
+        if (preg_match('#^https?://#i', $stringPath)) {
+            return $stringPath;
+        }
+
+        $cleanBaseUrl = rtrim($baseUrl, '/');
+        $cleanPath = ltrim($stringPath, '/');
+
+        $basePath = trim(parse_url($cleanBaseUrl, PHP_URL_PATH) ?? '', '/');
+        if ($basePath !== '') {
+            if ($cleanPath === $basePath) {
+                $cleanPath = '';
+            } elseif (strpos($cleanPath, $basePath . '/') === 0) {
+                $cleanPath = substr($cleanPath, strlen($basePath) + 1);
+            }
+        }
+
+        return $cleanBaseUrl . ($cleanPath !== '' ? '/' . $cleanPath : '');
     }
 }
 

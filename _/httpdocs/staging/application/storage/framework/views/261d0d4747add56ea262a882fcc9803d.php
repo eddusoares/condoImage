@@ -23,7 +23,7 @@
                     <h2 class="tc-title"><?php echo e(__($tc->data_values->heading ?? 'Discover neighborhoods')); ?></h2>
                     <p class="tc-subtitle"><?php echo e(__($tc->data_values->subheading_primary ?? 'Explore premium neighborhoods and find your perfect location. From downtown areas to suburban communities.')); ?></p>
                     <p class="tc-subtitle-secondary mb-4"><?php echo e(__($tc->data_values->subheading_secondary ?? 'Find the best neighborhoods for your lifestyle.')); ?></p>
-                    <a href="<?php echo e($tc->data_values->button_link ?? '#'); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all neighborhoods')); ?></a>
+                    <a href="<?php echo e($tc->data_values->button_link ?? url('/neighborhood')); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all neighborhoods')); ?></a>
                 </div>
                 
                 <!-- Controles para desktop - dentro da primeira coluna -->

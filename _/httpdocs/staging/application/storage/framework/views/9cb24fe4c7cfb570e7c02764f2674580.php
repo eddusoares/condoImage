@@ -20,7 +20,7 @@
 <?php $__env->startPush('script'); ?>
     <script>
         $(document).on('click', '.myGuestWishlistButton', function () {
-            window.location.href = "<?php echo e(route('user.login')); ?>";
+            window.location.href = "<?php echo e(baseRoute('user.login')); ?>";
         });
     </script>
 
@@ -57,7 +57,7 @@
                     }
 
                     if (data.auth == false) {
-                        window.location.href = "<?php echo e(route('user.login')); ?>";
+                        window.location.href = "<?php echo e(baseRoute('user.login')); ?>";
                     }
                 },
                 error: function (xhr, status, error) { },
@@ -79,7 +79,7 @@
     </script>
 
     <!-- Top Categories Carousel Script -->
-    <script src="<?php echo e(asset($activeTemplateTrue . 'js/simplified_carousel_script.js')); ?>"></script>
+    <script src="<?php echo e(baseAsset($activeTemplateTrue . 'js/simplified_carousel_script.js')); ?>"></script>
 
     <!-- Section Anchor Navigation Script -->
     <script>

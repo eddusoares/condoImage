@@ -6,9 +6,34 @@
     $buttonText = $config['button_text'] ?? ($type === 'buildings' ? 'Explore all buildings' : 'Explore all neighborhoods');
     // CORREÇÃO: Remover fallback hardcoded e usar diretamente o valor da configuração
     $buttonLink = $config['button_link'] ?? '#';
-    $showMeta = (bool)($config['show_meta'] ?? false);
-    // CORREÇÃO: Aplicar a mesma lógica para search_action
-    $searchAction = $config['search_action'] ?? '#';
+    $rawSearchAction = $config['search_action'] ?? '#';
+    if ($rawSearchAction instanceof \Illuminate\Support\Collection) {
+      $rawSearchAction = $rawSearchAction->first();
+    }
+    $searchAction = $rawSearchAction ? (string) $rawSearchAction : '#';
+
+    $rawSearchParam = $config['search_param'] ?? null;
+    $searchParam = is_string($rawSearchParam) && $rawSearchParam !== ''
+      ? $rawSearchParam
+      : ($type === 'buildings' ? 'search' : 'q');
+
+    $searchDefaults = $config['search_defaults'] ?? [];
+    if ($searchDefaults instanceof \Illuminate\Support\Collection) {
+      $searchDefaults = $searchDefaults->toArray();
+    }
+    if (!is_array($searchDefaults)) {
+      $searchDefaults = [];
+    }
+
+    $rawListEndpoint = $config['list_endpoint'] ?? null;
+    if ($rawListEndpoint instanceof \Illuminate\Support\Collection) {
+      $rawListEndpoint = $rawListEndpoint->first();
+    }
+    $listEndpoint = $rawListEndpoint ? (string) $rawListEndpoint : '';
+    if ($listEndpoint === '') {
+      $listEndpoint = $type === 'buildings' ? baseRoute('condo.building') : baseRoute('neighborhood');
+    }
+
     $limit = isset($config['limit']) ? max(1, (int)$config['limit']) : ($type === 'buildings' ? 6 : 6);
     $initialLimitValue = $limit ?: 6;
 
@@ -17,23 +42,29 @@
     $componentId = $type === 'buildings' ? 'buildings' : 'neighborhoods';
     $uniqueId = $sectionId . '-' . $componentId;
 
-    $items = $config['items'] ?? null;
+  $showMeta = (bool) ($config['show_meta'] ?? false);
 
-    if (!$items) {
-        if ($type === 'buildings') {
-            $items = App\Models\Building::with(['neighborhood', 'buildingImages', 'buildingListingUnits'])
-                ->where('status', 1)
-                ->orderBy('name', 'asc')
-                ->take($limit)
-                ->get();
-        } else {
-            $items = App\Models\Neighborhood::with(['county', 'buildings', 'buildings.buildingImages'])
-                ->where('status', 1)
-                ->orderBy('name', 'asc')
-                ->take($limit)
-                ->get();
-        }
+  $items = $config['items'] ?? null;
+
+  if ($items instanceof \Illuminate\Support\Collection) {
+    $items = $items->all();
+  }
+
+  if (empty($items)) {
+    if ($type === 'buildings') {
+      $items = App\Models\Building::with(['neighborhood', 'buildingImages', 'buildingListingUnits'])
+        ->where('status', 1)
+        ->orderBy('name', 'asc')
+        ->take($limit)
+        ->get();
+    } else {
+      $items = App\Models\Neighborhood::with(['county', 'buildings', 'buildings.buildingImages'])
+        ->where('status', 1)
+        ->orderBy('name', 'asc')
+        ->take($limit)
+        ->get();
     }
+  }
 
   $showMoreButton = (bool) ($config['show_more_button'] ?? false);
   $initialMobileState = $showMoreButton ? 'collapsed' : 'expanded';
@@ -52,14 +83,14 @@
             $loadMoreConfig = [];
         }
 
-        $loadMoreEndpoint = $loadMoreConfig['endpoint'] ?? ($type === 'buildings' ? route('condo.building') : route('neighborhood'));
+  $loadMoreEndpoint = $loadMoreConfig['endpoint'] ?? ($type === 'buildings' ? baseRoute('condo.building') : baseRoute('neighborhood'));
         $loadMoreParams = $loadMoreConfig['params'] ?? [];
         $loadMoreIncrement = isset($loadMoreConfig['increment']) ? max(1, (int) $loadMoreConfig['increment']) : 3;
         $loadMoreMaxLimit = isset($loadMoreConfig['max_limit']) ? (int) $loadMoreConfig['max_limit'] : null;
     }
 @endphp
  
-<section class="neigh-section" data-listing-component="{{ $uniqueId }}" data-type="{{ $type }}" data-mobile-state="{{ $initialMobileState }}" data-initial-limit="{{ $initialLimitValue }}">
+<section class="neigh-section" data-listing-component="{{ $uniqueId }}" data-type="{{ $type }}" data-mobile-state="{{ $initialMobileState }}" data-initial-limit="{{ $initialLimitValue }}" data-list-endpoint="{{ $listEndpoint }}">
     <div class="container">
         <div class="section-head d-flex align-items-center justify-content-between">
             <div>
@@ -68,7 +99,7 @@
                     <p class="section-subtitle">{{ __($subheading) }}</p>
                 @endif
             </div>
-            <div class="list-search d-flex align-items-center listing-search-form" data-search-form="{{ $uniqueId }}" data-search-endpoint="{{ $searchAction }}">
+            <div class="list-search d-flex align-items-center listing-search-form" data-search-form="{{ $uniqueId }}" data-search-endpoint="{{ $searchAction }}" data-search-param="{{ $searchParam }}" data-search-defaults='@json($searchDefaults)'>
                 <!-- <span class="list-search__icon"><i class="fas fa-search"></i></span> -->
                 <input type="text" name="q" class="list-search__input" placeholder="Search" autocomplete="off" data-search-input="{{ $uniqueId }}">
                 <button type="button" class="list-search__clear-btn" aria-label="Clear search" style="display: none;" data-clear-btn="{{ $uniqueId }}">
@@ -92,7 +123,7 @@
                         $buildingsCount = 0;
 
                         if ($type === 'buildings') {
-                            $cardHref = route('condo.building.details', building_route_params($item));
+                            $cardHref = baseRoute('condo.building.details', building_route_params($item));
                             $label = $item->name;
                             $imageSrc = $item->image
                                 ? getImage(getFilePath('building') . '/' . $item->image)
@@ -103,7 +134,7 @@
                                 $metaRight = $item->buildingListingUnits ? $item->buildingListingUnits->count() : ($item->building_listing_units_count ?? 0);
                             }
                         } else {
-                            $cardHref = route('neighborhood.details', [
+                            $cardHref = baseRoute('neighborhood.details', [
                                 'county' => slug(optional($item->county)->name ?? ''),
                                 'slug' => slug($item->name),
                                 'id' => $item->id,
@@ -236,6 +267,93 @@
 @once('listing_cards_script')
   @push('script')
   <script>
+  const rawBaseUrl = typeof window !== 'undefined' && window.BASE_URL ? String(window.BASE_URL) : '';
+
+  const computeBaseInfo = () => {
+    const defaultOrigin = window.location.origin.replace(/\/+$/, '');
+
+    if (rawBaseUrl) {
+      try {
+        const parsed = new URL(rawBaseUrl);
+        const origin = `${parsed.protocol}//${parsed.host}`;
+        const basePath = parsed.pathname.replace(/^\/+|\/+$/g, '');
+        const prefix = basePath ? `${origin}/${basePath}` : origin;
+        return { origin, path: basePath, prefix };
+      } catch (err) {
+        console.warn('Invalid BASE_URL value detected', err);
+      }
+    }
+
+    return { origin: defaultOrigin, path: '', prefix: defaultOrigin };
+  };
+
+  const BASE_INFO = computeBaseInfo();
+
+  const splitExtras = (value) => {
+    let pathOnly = String(value || '');
+    let fragment = '';
+    let query = '';
+
+    const hashIndex = pathOnly.indexOf('#');
+    if (hashIndex !== -1) {
+      fragment = pathOnly.substring(hashIndex);
+      pathOnly = pathOnly.substring(0, hashIndex);
+    }
+
+    const queryIndex = pathOnly.indexOf('?');
+    if (queryIndex !== -1) {
+      query = pathOnly.substring(queryIndex);
+      pathOnly = pathOnly.substring(0, queryIndex);
+    }
+
+    return { pathOnly, suffix: query + fragment };
+  };
+
+  const stripBaseFromPath = (pathValue) => {
+    const trimmed = String(pathValue || '').replace(/^\/+/, '');
+    const basePath = BASE_INFO.path;
+
+    if (!basePath) {
+      return trimmed;
+    }
+
+    if (trimmed === basePath) {
+      return '';
+    }
+
+    const basePrefix = `${basePath}/`;
+    if (trimmed.startsWith(basePrefix)) {
+      return trimmed.slice(basePrefix.length);
+    }
+
+    return trimmed;
+  };
+
+  const buildInternalUrl = (value) => {
+    if (!value) {
+      return BASE_INFO.prefix;
+    }
+
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
+      return value;
+    }
+
+    const { pathOnly, suffix } = splitExtras(value);
+    const relative = stripBaseFromPath(pathOnly);
+    const prefix = BASE_INFO.prefix.replace(/\/+$/, '');
+    const cleanRelative = String(relative || '').replace(/^\/+/, '');
+    const finalUrl = cleanRelative ? `${prefix}/${cleanRelative}` : prefix;
+
+    return finalUrl + suffix;
+  };
+
+  const buildAssetUrl = (path) => {
+    if (!path) {
+      return '';
+    }
+    return buildInternalUrl(path);
+  };
+
   document.addEventListener('DOMContentLoaded', function () {
   const parseParams = (raw) => {
     if (!raw) return {};
@@ -276,21 +394,34 @@
     const uniqueId  = component.getAttribute('data-listing-component');
     const container = document.getElementById('listing-cards-container-' + uniqueId);
 
-    // Pega elementos do SEARCH (sempre inicializa, com ou sem More)
-    const searchForm   = component.querySelector('[data-search-form="' + uniqueId + '"]');
-    const searchInput  = component.querySelector('[data-search-input="' + uniqueId + '"]');
-    const searchBtn    = component.querySelector('[data-search-btn="' + uniqueId + '"]');
-    const clearBtn     = component.querySelector('[data-clear-btn="' + uniqueId + '"]');
-    const searchAction = searchForm ? (searchForm.getAttribute('data-search-endpoint') || '') : '';
+  // Pega elementos do SEARCH (sempre inicializa, com ou sem More)
+  const searchForm        = component.querySelector('[data-search-form="' + uniqueId + '"]');
+  const searchInput       = component.querySelector('[data-search-input="' + uniqueId + '"]');
+  const searchBtn         = component.querySelector('[data-search-btn="' + uniqueId + '"]');
+  const clearBtn          = component.querySelector('[data-clear-btn="' + uniqueId + '"]');
+  const searchAction      = searchForm ? (searchForm.getAttribute('data-search-endpoint') || '') : '';
+    const searchParamAttr   = searchForm ? (searchForm.getAttribute('data-search-param') || '') : '';
+    const searchDefaultsRaw = searchForm ? searchForm.getAttribute('data-search-defaults') : '';
+    const parsedSearchDefaults = parseParams(searchDefaultsRaw);
+    const searchDefaults    = parsedSearchDefaults && typeof parsedSearchDefaults === 'object' && !Array.isArray(parsedSearchDefaults)
+      ? parsedSearchDefaults
+      : {};
 
     // Elementos do MORE (podem não existir)
     const loadMoreBtn  = document.getElementById('load-more-' + uniqueId);
     const inferredType = component.getAttribute('data-type');
     const type         = inferredType || loadMoreBtn?.dataset.type || 'buildings';
-    const listEndpoint = (loadMoreBtn?.getAttribute('data-endpoint')) || (type === 'buildings' ? '/condo-building' : '/neighborhood');
+    const resolvedSearchParam = searchParamAttr || (type === 'buildings' ? 'search' : 'q');
+    
+    // Usar as funções helper do PHP para gerar endpoints corretos
+  const configuredListEndpoint = component.getAttribute('data-list-endpoint') || '';
+  const listEndpoint = loadMoreBtn?.getAttribute('data-endpoint') || 
+            configuredListEndpoint ||
+            (type === 'buildings' ? '{{ baseUrl("condo-building") }}' : '{{ baseUrl("neighborhood") }}');
     const increment    = parseInt(loadMoreBtn?.getAttribute('data-increment') || '3', 10);
     const maxLimit     = parseInt(loadMoreBtn?.getAttribute('data-max-limit') || '0', 10);
-    const baseParams   = loadMoreBtn ? parseParams(loadMoreBtn.getAttribute('data-params')) : {};
+  const rawBaseParams = loadMoreBtn ? parseParams(loadMoreBtn.getAttribute('data-params')) : {};
+  const baseParams    = rawBaseParams && typeof rawBaseParams === 'object' && !Array.isArray(rawBaseParams) ? rawBaseParams : {};
     let initialLimit   = parseInt(component.getAttribute('data-initial-limit') || '0', 10);
     if (!Number.isFinite(initialLimit) || initialLimit <= 0) {
       const buttonInitial = loadMoreBtn ? parseInt(loadMoreBtn.getAttribute('data-current-limit') || '0', 10) : 0;
@@ -331,7 +462,8 @@
     const getExistingIds = () => new Set(getCardNodes(container).map(node => node.getAttribute('data-item-id')));
 
     const buildUrl = (limitValue, offsetValue = 0) => {
-      const url = new URL(listEndpoint, window.location.origin);
+      const normalizedEndpoint = buildInternalUrl(listEndpoint);
+      const url = new URL(normalizedEndpoint);
       const params = { ...baseParams };
       if (typeof limitValue === 'number' && Number.isFinite(limitValue)) {
         params.limit = limitValue;
@@ -375,12 +507,24 @@
         isSearchActive = true;
 
         try {
-          const url = new URL(searchAction || (type === 'buildings' ? '/search-building' : '/neighborhood'), window.location.origin);
-          if ((searchAction && searchAction.indexOf('/search') !== -1) || type === 'buildings') {
-            url.searchParams.set('search', q);
-          } else {
-            url.searchParams.set('q', q);
-          }
+          const fallbackEndpoint = type === 'buildings' ? '{{ baseUrl("search") }}' : '{{ baseUrl("neighborhood") }}';
+          const endpointSource = searchAction && searchAction !== '#' ? searchAction : fallbackEndpoint;
+          const url = new URL(buildInternalUrl(endpointSource));
+
+          url.searchParams.delete('offset');
+          url.searchParams.delete('limit');
+          url.searchParams.delete(resolvedSearchParam);
+          url.searchParams.set(resolvedSearchParam, q);
+
+          Object.entries(searchDefaults).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') {
+              return;
+            }
+            if (key === resolvedSearchParam) {
+              return;
+            }
+            url.searchParams.set(key, value);
+          });
 
           const res  = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
           const data = await res.json();
@@ -518,14 +662,26 @@
   // ------- mesma função de cards -------
   function generateCardHtml(item, type) {
     const slug = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const sanitizeSegments = (segments) => segments.filter((segment) => {
+      if (segment === undefined || segment === null) {
+        return false;
+      }
+      const value = String(segment);
+      return value.length > 0;
+    });
 
     if (type === 'buildings') {
       const countySlug   = item?.neighborhood?.county ? slug(item.neighborhood.county.name) : '';
       const neighSlug    = item?.neighborhood ? slug(item.neighborhood.name) : '';
       const buildingSlug = slug(item.name);
-      const cardHref     = `/${countySlug}/${neighSlug}/${buildingSlug}/${item.id}`;
+      const cardSegments = sanitizeSegments([countySlug, neighSlug, buildingSlug, item?.id]);
+      const cardHref     = buildInternalUrl(cardSegments.join('/'));
       const label        = item.name || '';
-      const imageSrc     = item.image ? `/assets/images/building/${item.image}` : '/placeholder-image/350x300';
+      
+      // Construir URL da imagem considerando BASE_URL
+      const imageSrc = item.image 
+        ? buildAssetUrl(`assets/images/building/${item.image}`)
+        : buildAssetUrl('placeholder-image/350x300');
 
       const buildingImagesCount = item.building_images?.length ?? item.buildingImages?.length ?? 0;
       const listingUnitsCount   = item.building_listing_units?.length ?? item.buildingListingUnits?.length ?? 0;
@@ -548,9 +704,15 @@
     } else {
       const countySlug   = item.county ? slug(item.county.name) : '';
       const neighSlug    = slug(item.name);
-      const cardHref     = `/${countySlug}/${neighSlug}/${item.id}`;
+      const cardSegments = sanitizeSegments([countySlug, neighSlug, item?.id]);
+      const cardHref     = buildInternalUrl(cardSegments.join('/'));
       const label        = item.name || '';
-      const imageSrc     = item.image ? `/assets/images/neighborhood/${item.image}` : '/placeholder-image/350x300';
+      
+      // Construir URL da imagem considerando BASE_URL
+      const imageSrc = item.image 
+        ? buildAssetUrl(`assets/images/neighborhood/${item.image}`)
+        : buildAssetUrl('placeholder-image/350x300');
+      
       const buildingsCnt = item.buildings ? item.buildings.length : 0;
 
       let imagesCnt = 0;

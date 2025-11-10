@@ -23,12 +23,12 @@
     $searchItems = $searchItems->merge($allBuildings->map(fn($b) => [
         'type' => 'building',
         'name' => $b->name,
-        'url' => route('condo.building.details', building_route_params($b)),
+        'url' => baseRoute('condo.building.details', building_route_params($b)),
     ]));
     $searchItems = $searchItems->merge($allNeighborhoods->map(fn($n) => [
         'type' => 'neighborhood',
         'name' => $n->name,
-        'url' => route('neighborhood.details', ['county' => slug($n->county->name), 'slug' => slug($n->name), 'id' => $n->id]),
+        'url' => baseRoute('neighborhood.details', ['county' => slug($n->county->name), 'slug' => slug($n->name), 'id' => $n->id]),
     ]));
     $searchItems = $searchItems->shuffle(); // Randomize the combined list
 
@@ -140,7 +140,7 @@
 
                     <div class="navbar-search__panel" id="navbarSearchPanel" aria-hidden="true">
                         <div class="navbar-search__card">
-                            <form action="{{ route('search.building') }}" method="GET" class="navbar-search__field">
+                            <form action="{{ baseRoute('search.building') }}" method="GET" class="navbar-search__field">
                                 <i class="fas fa-search"></i>
                                 <input id="navbarSearchInput" name="search" type="text" data-building-search
                                     placeholder="Search buildings and neighborhoods" autocomplete="off">
@@ -231,7 +231,7 @@
             </button>
         </div>
         <div class="mobile-menu-content">
-            <form action="{{ route('search.building') }}" method="GET" class="mobile-search-form">
+            <form action="{{ baseRoute('search.building') }}" method="GET" class="mobile-search-form">
                 <div class="mobile-search-field">
                     <i class="fas fa-search"></i>
                     <input name="search" type="text" data-building-search placeholder="Search buildings and neighborhoods" autocomplete="off">
@@ -735,7 +735,7 @@
 @endpush
 
 <!-- Mobile Menu Script -->
-<script src="{{ asset($activeTemplateTrue . 'js/mobile-menu.js') }}"></script>
+<script src="{{ baseAsset($activeTemplateTrue . 'js/mobile-menu.js') }}"></script>
 
 <style>
     /* Estilos baseados no Figma */

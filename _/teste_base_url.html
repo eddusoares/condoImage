@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste BASE_URL</title>
+</head>
+<body>
+    <h1>Teste de Configuração BASE_URL</h1>
+    
+    <h2>URLs que devem funcionar:</h2>
+    <h3>Desenvolvimento (localhost):</h3>
+    <ul>
+        <li><a href="http://localhost:8000/">Home</a></li>
+        <li><a href="http://localhost:8000/condo-building">Condo Building</a></li>
+        <li><a href="http://localhost:8000/neighborhood">Neighborhood</a></li>
+        <li><a href="http://localhost:8000/search">Search</a></li>
+    </ul>
+    
+    <h3>Produção (staging):</h3>
+    <ul>
+        <li><a href="https://condoimage.com/staging/">Home</a></li>
+        <li><a href="https://condoimage.com/staging/condo-building">Condo Building</a></li>
+        <li><a href="https://condoimage.com/staging/neighborhood">Neighborhood</a></li>
+        <li><a href="https://condoimage.com/staging/search">Search</a></li>
+    </ul>
+
+    <h2>Teste JavaScript:</h2>
+    <p>Para testar, abra o console do navegador (F12) e execute:</p>
+    <pre>
+// Verificar se BASE_URL está definido corretamente
+console.log('BASE_URL:', window.BASE_URL);
+console.log('APP_URL:', window.APP_URL);
+
+// Testar construção de URL
+const testEndpoint = 'condo-building';
+const testUrl = new URL(testEndpoint);
+console.log('URL construída:', testUrl.toString());
+    </pre>
+
+    <h2>Como verificar o problema:</h2>
+    <ol>
+        <li>Abra a página que contém os building cards</li>
+        <li>Abra o console do navegador (F12)</li>
+        <li>Clique no botão "Reset" da busca</li>
+        <li>Verifique no console ou na aba Network qual URL está sendo chamada</li>
+        <li>Deve ser: <code>http://localhost:8000/condo-building?limit=6</code> ou <code>https://condoimage.com/staging/condo-building?limit=6</code></li>
+    </ol>
+
+    <h2>Configuração .env para cada ambiente:</h2>
+    <h3>Desenvolvimento (local):</h3>
+    <pre>
+APP_URL=http://localhost:8000
+BASE_URL=http://localhost:8000
+    </pre>
+    
+    <h3>Produção (staging):</h3>
+    <pre>
+APP_URL=https://condoimage.com
+BASE_URL=https://condoimage.com/staging
+    </pre>
+</body>
+</html>

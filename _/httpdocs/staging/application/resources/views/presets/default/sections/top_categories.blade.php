@@ -24,7 +24,7 @@
                     <h2 class="tc-title">{{ __($tc->data_values->heading ?? 'Stand out with better visuals') }}</h2>
                     <p class="tc-subtitle">{{ __($tc->data_values->subheading_primary ?? 'Discover premium images crafted for real estate professionals. From drone shots to interiors and floor plans — all organized by building and neighborhood.') }}</p>
                     <p class="tc-subtitle-secondary mb-4">{{ __($tc->data_values->subheading_secondary ?? 'Stand out from the competition with stunning, ready-to-use visuals.') }}</p>
-                    <a href="{{ $tc->data_values->button_link ?? route('condo.building') }}" class="tc-button">{{ __($tc->data_values->button_text ?? 'Explore all buildings') }}</a>
+                    <a href="{{ $tc->data_values->button_link ?? baseRoute('condo.building') }}" class="tc-button">{{ __($tc->data_values->button_text ?? 'Explore all buildings') }}</a>
                 </div>
                 
                 <!-- Controles para desktop - dentro da primeira coluna -->
@@ -49,7 +49,7 @@
                             @php
                                 $cardImage = getImage(getFilePath('building') . '/' . $item->image);
                             @endphp
-                            <a href="{{ route('condo.building.details', building_route_params($item)) }}"
+                            <a href="{{ baseRoute('condo.building.details', building_route_params($item)) }}"
                                 class="tc-card"
                                 data-preview-image="{{ $cardImage }}"
                                 data-preview-label="{{ $item->name }}">

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Correção Assets BASE_URL</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .code { background: #e9ecef; padding: 10px; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste: Correção Assets BASE_URL</h1>
+    
+    <div class="test-section">
+        <h2>❌ Problema Identificado:</h2>
+        <p>As URLs das imagens estavam sendo construídas sem considerar BASE_URL:</p>
+        <div class="code">
+// ❌ ANTES (hardcoded):<br>
+const imageSrc = `/assets/images/building/${item.image}`;<br>
+<br>
+// ❌ Resultado em produção:<br>
+// https://condoimage.com/assets/images/neighborhood/6840a6dbd6a941749067483.jpg
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Solução Implementada:</h2>
+        <p>Agora usa uma função helper que considera BASE_URL:</p>
+        <div class="code">
+// ✅ DEPOIS (com BASE_URL):<br>
+const buildAssetUrl = (path) => {<br>
+&nbsp;&nbsp;const baseUrl = window.BASE_URL || window.location.origin;<br>
+&nbsp;&nbsp;const cleanPath = path.startsWith('/') ? path.substring(1) : path;<br>
+&nbsp;&nbsp;return baseUrl.endsWith('/') ? `${baseUrl}${cleanPath}` : `${baseUrl}/${cleanPath}`;<br>
+};<br>
+<br>
+const imageSrc = item.image <br>
+&nbsp;&nbsp;? buildAssetUrl(`assets/images/building/${item.image}`)<br>
+&nbsp;&nbsp;: buildAssetUrl('placeholder-image/350x300');
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Resultados Esperados:</h2>
+        
+        <h3>Desenvolvimento (localhost):</h3>
+        <div class="code">
+BASE_URL: http://localhost:8000<br>
+Imagem: assets/images/neighborhood/6840a6dbd6a941749067483.jpg<br>
+<span class="success">✅ Resultado: http://localhost:8000/assets/images/neighborhood/6840a6dbd6a941749067483.jpg</span>
+        </div>
+
+        <h3>Produção (staging):</h3>
+        <div class="code">
+BASE_URL: https://condoimage.com/staging<br>
+Imagem: assets/images/neighborhood/6840a6dbd6a941749067483.jpg<br>
+<span class="success">✅ Resultado: https://condoimage.com/staging/assets/images/neighborhood/6840a6dbd6a941749067483.jpg</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Como Testar:</h2>
+        <ol>
+            <li><strong>Abra a página que contém building/neighborhood cards</strong></li>
+            <li><strong>Faça uma busca</strong> (para ativar o JavaScript que gera novos cards)</li>
+            <li><strong>Abra o DevTools (F12)</strong> e vá para a aba Network</li>
+            <li><strong>Limpe o Network</strong> e clique em "Reset" da busca</li>
+            <li><strong>Observe as requisições de imagens</strong> - devem incluir /staging/ em produção</li>
+            <li><strong>Clique com botão direito em uma imagem</strong> e "Copiar URL da imagem"</li>
+            <li><strong>Verificar se a URL inclui o prefixo correto</strong></li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Teste JavaScript Manual:</h2>
+        <p>Execute no console do navegador:</p>
+        <div class="code">
+// Simular dados de teste<br>
+const testItem = { image: '6840a6dbd6a941749067483.jpg' };<br>
+<br>
+// Função que foi implementada<br>
+const buildAssetUrl = (path) => {<br>
+&nbsp;&nbsp;const baseUrl = window.BASE_URL || window.location.origin;<br>
+&nbsp;&nbsp;const cleanPath = path.startsWith('/') ? path.substring(1) : path;<br>
+&nbsp;&nbsp;return baseUrl.endsWith('/') ? `${baseUrl}${cleanPath}` : `${baseUrl}/${cleanPath}`;<br>
+};<br>
+<br>
+// Testar<br>
+const imageUrl = buildAssetUrl(`assets/images/neighborhood/${testItem.image}`);<br>
+console.log('URL construída:', imageUrl);<br>
+console.log('BASE_URL atual:', window.BASE_URL);<br>
+<br>
+// Deve mostrar a URL completa com /staging/ se em produção
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Arquivos Modificados:</h2>
+        <ul>
+            <li><code>resources/views/presets/default/sections/partials/listing_cards.blade.php</code></li>
+            <li>Função <code>generateCardHtml()</code> - linhas ~534 e ~559</li>
+            <li>Adicionada função helper <code>buildAssetUrl()</code></li>
+        </ul>
+    </div>
+
+    <script>
+        // Mostrar configurações atuais
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== Teste Assets BASE_URL ===');
+            console.log('BASE_URL:', window.BASE_URL);
+            console.log('APP_URL:', window.APP_URL);
+            console.log('Location Origin:', window.location.origin);
+            
+            if (window.BASE_URL) {
+                const testUrl = window.BASE_URL.endsWith('/') 
+                    ? window.BASE_URL + 'assets/images/test.jpg'
+                    : window.BASE_URL + '/assets/images/test.jpg';
+                console.log('Exemplo URL de asset:', testUrl);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -5,8 +5,8 @@
     $defaultTitle = $defaultTitle ?? 'All neighborhoods';
     $defaultSubheading = $defaultSubheading ?? null;
     $defaultButtonText = $defaultButtonText ?? 'Explore all neighborhoods';
-    $defaultButtonLink = $defaultButtonLink ?? route('neighborhood');
-    $defaultSearchAction = $defaultSearchAction ?? route('neighborhood');
+    $defaultButtonLink = $defaultButtonLink ?? baseRoute('neighborhood');
+    $defaultSearchAction = $defaultSearchAction ?? baseRoute('neighborhood');
 
     $replacements = isset($replacements) && is_array($replacements) ? $replacements : [];
 
@@ -41,7 +41,7 @@
         'show_more_button' => $resolvedShowMoreButton,
         'section_id' => 'neighborhood_gallery_page', // Unique ID for gallery section
         'load_more' => $resolvedShowMoreButton ? [
-            'endpoint' => route('neighborhood'),
+            'endpoint' => baseRoute('neighborhood'),
             'params' => (object) [],
             'increment' => 3,
             'max_limit' => isset($galleryValues->max_limit) ? (int) $galleryValues->max_limit : 50,

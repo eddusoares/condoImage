@@ -1,9 +1,21 @@
-﻿<?php
-    $tc = getContent('top_categories.content', true);
-    // Espera receber $buildings (Collection) do include. Se não vier, carrega 10 aleatórios.
+<?php
+    $tc = getContent('top_especific_neighborhoods_buildings.content', true);
+    
+    // Use buildings from database with admin parameters
     try {
-        if (!isset($buildings) || $buildings->isEmpty()) {
-            $buildings = App\Models\Building::with(['neighborhood', 'buildingImages'])->where('status', 1)->inRandomOrder()->take(10)->get();
+        $activeNeighborhood = isset($neighborhood) && $neighborhood instanceof App\Models\Neighborhood
+            ? $neighborhood
+            : null;
+
+        if ($activeNeighborhood) {
+            $buildings = App\Models\Building::with(['neighborhood', 'buildingImages'])
+                ->where('status', 1)
+                ->where('neighborhood_id', $activeNeighborhood->id)
+                ->inRandomOrder()
+                ->take(10)
+                ->get();
+        } else {
+            $buildings = collect();
         }
 
         // Verificar se temos buildings para mostrar
@@ -16,15 +28,15 @@
     }
 ?>
 
-<section class="top-categories-container pb-100">
+<section class="top-categories-container pb-100" id="top-especific-neighborhoods-buildings">
     <div class="container-fluid">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
                 <div class="tc-copy">
-                    <h2 class="tc-title"><?php echo e(__($tc->data_values->heading ?? 'Stand out with better visuals')); ?></h2>
-                    <p class="tc-subtitle"><?php echo e(__($tc->data_values->subheading_primary ?? 'Discover premium images crafted for real estate professionals. From drone shots to interiors and floor plans — all organized by building and neighborhood.')); ?></p>
-                    <p class="tc-subtitle-secondary mb-4"><?php echo e(__($tc->data_values->subheading_secondary ?? 'Stand out from the competition with stunning, ready-to-use visuals.')); ?></p>
-                    <a href="<?php echo e($tc->data_values->button_link ?? baseRoute('condo.building')); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all buildings')); ?></a>
+                    <h2 class="tc-title"><?php echo e(__($tc->data_values->heading ?? 'Explore premium buildings')); ?></h2>
+                    <p class="tc-subtitle"><?php echo e(__($tc->data_values->subheading_primary ?? 'Discover exclusive condominiums and luxury buildings. From modern high-rises to boutique residences.')); ?></p>
+                    <p class="tc-subtitle-secondary mb-4"><?php echo e(__($tc->data_values->subheading_secondary ?? 'Find your perfect home with stunning visuals.')); ?></p>
+                    <a href="<?php echo e($tc->data_values->button_link ?? route('condo.building')); ?>" class="tc-button"><?php echo e(__($tc->data_values->button_text ?? 'Explore all buildings')); ?></a>
                 </div>
                 
                 <!-- Controles para desktop - dentro da primeira coluna -->
@@ -49,7 +61,7 @@
                             <?php
                                 $cardImage = getImage(getFilePath('building') . '/' . $item->image);
                             ?>
-                            <a href="<?php echo e(baseRoute('condo.building.details', building_route_params($item))); ?>"
+                            <a href="<?php echo e(route('condo.building.details', building_route_params($item))); ?>"
                                 class="tc-card"
                                 data-preview-image="<?php echo e($cardImage); ?>"
                                 data-preview-label="<?php echo e($item->name); ?>">
@@ -82,7 +94,6 @@
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     </div>
 </section>
@@ -175,12 +186,12 @@
                         button.className = 'tc-indicator';
                         button.dataset.slide = '0';
                         button.setAttribute('aria-current', 'false');
+                        // DEPOIS  // PATCH: indicador define índice e clickPos
                         button.addEventListener('click', function () {
                         const target = Number(button.dataset.slide);
                         if (!Number.isNaN(target)) {
                             currentIndex = Math.max(0, Math.min(target, totalSlides - 1));
-                            // espelha regra de cliques: posição do clique = índice atual
-                            clickPos = currentIndex;
+                            clickPos = currentIndex;             // espelha navegação por cliques
                             applyTransform(true);
                         }
                         });
@@ -198,13 +209,14 @@
                 }
             });
 
-            let currentIndex = 0;      // slide atual (0..totalSlides-1)
-            let moveDistance = 0;      // largura de 1 card + gap
+            // DEPOIS  // PATCH: estado por cliques
+            let currentIndex = 0;      // índice atual (0..totalSlides-1)
+            let moveDistance = 0;      // largura 1 card + gap
             let resizeTimer;
             const SWIPE_THRESHOLD = 40;
 
-            // Navegação por cliques: com N slides, existem N-1 cliques válidos
-            let clickPos = 0;
+            // Regra fixa: com N slides existem N-1 cliques possíveis
+            let clickPos  = 0;
             const totalImages = totalSlides;
             let maxClicks = Math.max(0, totalImages - 1);
 
@@ -334,16 +346,15 @@
                 const firstCard = track.querySelector('.tc-card');
                 if (!firstCard) {
                     moveDistance = 0;
-                    maxClicks = 0;
+                    maxIndex = 0;
                     updateNavButtons();
                     return;
                 }
 
-                // reset dos indicadores
                 indicatorSets.forEach((set) => {
                     if (set.animationTimer) {
-                    clearTimeout(set.animationTimer);
-                    set.animationTimer = null;
+                        clearTimeout(set.animationTimer);
+                        set.animationTimer = null;
                     }
                     set.container.style.transition = 'none';
                     set.container.style.transform = 'translateX(0)';
@@ -357,10 +368,9 @@
 
                 moveDistance = cardWidth + gapValue;
 
-                // Regra fixa por total de imagens
                 maxClicks = Math.max(0, totalSlides - 1);
 
-                // mantém coerência se o tamanho mudou
+                // coerência após resize/recalc
                 clickPos = Math.min(clickPos, maxClicks);
                 currentIndex = clickPos;
 
@@ -406,7 +416,7 @@
             }
 
             function handleSwipe(deltaX) {
-                if (Math.abs(deltaX) < SWIPE_THRESHOLD) {
+                if (Math.abs(deltaX) < 40) {
                     return;
                 }
                 if (deltaX < 0) {
@@ -429,7 +439,7 @@
                 try {
                     track.setPointerCapture(pointerId);
                 } catch (err) {
-                    /* ignore */
+                    // ignore
                 }
             }
 
@@ -451,7 +461,7 @@
                 try {
                     track.releasePointerCapture(event.pointerId);
                 } catch (err) {
-                    /* ignore */
+                    // ignore
                 }
 
                 resetPointerState();
@@ -465,7 +475,7 @@
                 try {
                     track.releasePointerCapture(event.pointerId);
                 } catch (err) {
-                    /* ignore */
+                    // ignore
                 }
                 resetPointerState();
             }
@@ -541,11 +551,4 @@
         }
     })();
 </script>
-
-
-
-
-
-
-
-<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/top_categories.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\Users\victo\Desktop\pedro\condoImage\_\httpdocs\staging\application\resources\views/presets/default/sections/top_especific_neighborhoods_buildings.blade.php ENDPATH**/ ?>
