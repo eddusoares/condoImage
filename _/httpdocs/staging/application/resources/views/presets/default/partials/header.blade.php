@@ -844,6 +844,14 @@
         transform: translateX(20px); /* Small translate for extra smoothness */
     }
 
+    @media (max-width: 991.98px) {
+        .mobile-menu-system,
+        .mobile-menu-panel {
+            height: calc(100vh / var(--ui-zoom-factor, 1));
+            height: calc(100dvh / var(--ui-zoom-factor, 1));
+        }
+    }
+
     .mobile-menu-panel.active {
         right: 0;
         opacity: 1;

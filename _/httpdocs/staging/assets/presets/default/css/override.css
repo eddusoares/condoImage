@@ -28,6 +28,7 @@ body {
   margin: 0;
   padding: 0;
   zoom: 0.80;
+  --ui-zoom-factor: 0.80;
 }
 
 p {
@@ -817,9 +818,9 @@ main,
   .banner-section-two {
     position: relative !important;
     display: flex !important;
-    width: 100vw !important;
-    /* Full viewport width */
-    height: calc(100vw * 846 / 402) !important;
+    width: calc(100vw / var(--ui-zoom-factor, 1)) !important;
+    /* Full viewport width compensating body zoom */
+    height: calc((100vw / var(--ui-zoom-factor, 1)) * 846 / 402) !important;
     /* Responsive height maintaining proportion */
     max-height: 846px !important;
     margin: 0 !important;
